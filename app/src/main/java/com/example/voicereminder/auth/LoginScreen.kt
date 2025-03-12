@@ -23,6 +23,7 @@ fun LoginScreen(
     LaunchedEffect(authState) {
         when (authState) {
             is AuthViewModel.AuthState.Success -> onLoginSuccess()
+            is AuthViewModel.AuthState.Idle -> {} // Idle 상태에서는 아무 작업도 하지 않음 로그 아웃할때 사용됨
             else -> {}
         }
     }

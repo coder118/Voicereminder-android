@@ -24,4 +24,8 @@ interface ApiService {
     // (추가) 로그아웃 엔드포인트
     @POST("logout/")
     suspend fun logout(@Header("Authorization") token: String, @Body body: Map<String, String?>): Response<Unit>
+
+    //계정삭제 엔드 포인트
+    @POST("delete-account/")
+    suspend fun deleteAccount(@Header("Authorization") token: String, @Body body: Map<String, String?>): Response<Unit>
 }

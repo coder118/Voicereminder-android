@@ -48,22 +48,30 @@ class MainActivity : ComponentActivity() {
         setContent {
             VoiceReminderTheme {
                 val navController = rememberNavController()
-
+                val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
                 NavHost(
                     navController = navController,
-                    startDestination = "login"
+                    startDestination = if (isLoggedIn) "main" else "login"
                 ) {
                     composable("login") {
                         LoginScreen(
                             viewModel = authViewModel,
-                            onLoginSuccess = { navController.navigate("main") },
+                            onLoginSuccess = { authViewModel.setLoggedIn(true)
+                                navController.navigate("main") {
+                                    popUpTo("login") { inclusive = true }
+                                } },
                             onNavigateToRegister = { navController.navigate("register") }
                         )
                     }
                     composable("register") {
                         RegisterScreen(
                             viewModel = authViewModel,
-                            onRegisterSuccess = { navController.navigate("login") },
+                            onRegisterSuccess = {
+                                // 회원가입 성공 시 로그인 화면으로 이동
+                                navController.navigate("login") {
+                                    popUpTo("register") { inclusive = true }
+                                }
+                            },
                             onNavigateToLogin = { navController.popBackStack() }
                         )
                     }
@@ -71,7 +79,18 @@ class MainActivity : ComponentActivity() {
                         // 메인 화면 구현 부분
                         MainScreen(
                             viewModel = authViewModel,
-                            onLogoutSuccess = { navController.navigate("login") { popUpTo("main") { inclusive = true } } }
+
+                            onLogoutSuccess = { authViewModel.setLoggedIn(false)
+                                navController.navigate("login") {
+                                    popUpTo("main") { inclusive = true } } },
+
+                            onDeleteAccountSuccess = {
+                                navController.navigate("login") {
+                                    popUpTo("main") { inclusive = true }
+                                }
+                            }
+
+
                         )
 
                     }

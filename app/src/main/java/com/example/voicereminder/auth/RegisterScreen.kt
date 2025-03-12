@@ -26,7 +26,11 @@ fun RegisterScreen(
 
     LaunchedEffect(authState) {
         when (authState) {
-            is AuthViewModel.AuthState.Success -> onRegisterSuccess()
+            is AuthViewModel.AuthState.Success -> {
+                // 회원가입 성공 시 로그인 화면으로 이동
+                onRegisterSuccess()
+                viewModel.setIdle()//authstate값을 아무것도 없게 바꿔줌 auth에 값이 계속 존재하면 login에서 loginaccess인줄 알고 메인스크린으로 화면을 넘겨버림
+            }
             else -> {}
         }
     }
