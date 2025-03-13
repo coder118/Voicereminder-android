@@ -13,7 +13,8 @@ import com.example.voicereminder.auth.AuthViewModel
 fun MainScreen(
     viewModel: AuthViewModel,
     onLogoutSuccess: () -> Unit, // 로그아웃 성공 시 호출될 콜백 함수
-    onDeleteAccountSuccess: () -> Unit// 회우너 탈퇴성공시 콜백
+    onDeleteAccountSuccess: () -> Unit,// 회우너 탈퇴성공시 콜백
+    onNavigateToCreateSentence: () -> Unit // 새로운 파라미터 추가
 ) {
     var errorMessage by remember { mutableStateOf<String?>(null) }
     var showDeleteConfirmDialog by remember { mutableStateOf(false) }
@@ -31,6 +32,13 @@ fun MainScreen(
             style = MaterialTheme.typography.headlineLarge,
             modifier = Modifier.padding(bottom = 48.dp)
         )
+
+        Button(
+            onClick = { onNavigateToCreateSentence() }, // 글쓰기 화면으로 이동
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text("글쓰기")
+        }
 
         Button(
             onClick = {

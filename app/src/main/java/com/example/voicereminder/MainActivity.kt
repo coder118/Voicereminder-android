@@ -1,5 +1,6 @@
 package com.example.voicereminder
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -24,6 +25,7 @@ import retrofit2.Response
 
 
 import androidx.activity.compose.setContent
+import androidx.annotation.RequiresApi
 import androidx.compose.runtime.remember
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -31,19 +33,23 @@ import androidx.navigation.compose.rememberNavController
 import com.example.voicereminder.auth.AuthViewModel
 import com.example.voicereminder.auth.LoginScreen
 import com.example.voicereminder.auth.RegisterScreen
+import com.example.voicereminder.main.CreateSentenceScreen
 import com.example.voicereminder.main.MainScreen
+import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.ui.theme.VoiceReminderTheme
 import com.example.voicereminder.utils.TokenManager
 
 class MainActivity : ComponentActivity() {
+    @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val tokenManager = TokenManager(this)
-        val authViewModel = AuthViewModel(
+        val authViewModel = AuthViewModel(//로그인,회원가입,로그아웃
             RetrofitInstance.apiService,
             tokenManager
         )
+        val sentenceViewModel = SentenceViewModel(RetrofitInstance.apiService, tokenManager) //글작성
 
         setContent {
             VoiceReminderTheme {
@@ -88,11 +94,26 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("login") {
                                     popUpTo("main") { inclusive = true }
                                 }
-                            }
+                            },
+
+
+                            onNavigateToCreateSentence = {
+                                navController.navigate("createSentence")
+                            },
 
 
                         )
 
+                    }
+                    composable("createSentence") {
+                        CreateSentenceScreen(
+                            viewModel = sentenceViewModel,
+                            onCancel = { navController.popBackStack() },
+                            onSubmitSuccess = {
+                                navController.popBackStack()
+                                // 여기에 성공 메시지를 표시하는 로직을 추가할 수 있습니다.
+                            }
+                        )
                     }
                 }
             }

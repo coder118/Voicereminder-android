@@ -1,0 +1,230 @@
+package com.example.voicereminder.main
+
+import android.os.Build
+import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import com.example.voicereminder.model.UserSettings
+import java.time.LocalDate
+import java.time.LocalTime
+import java.time.Instant
+import java.time.ZoneId
+
+@RequiresApi(Build.VERSION_CODES.O)
+@OptIn(ExperimentalMaterial3Api::class) // 실험적 API 사용 선언
+@Composable
+fun CreateSentenceScreen(
+    viewModel: SentenceViewModel,
+    onCancel: () -> Unit,
+    onSubmitSuccess: () -> Unit
+) {
+    var content by remember { mutableStateOf("") }
+    var selectedTime by remember { mutableStateOf<LocalTime?>(null) }
+    var selectedDate by remember { mutableStateOf<LocalDate?>(null) }
+    var isRandom by remember { mutableStateOf(false) }
+    var vibrationEnabled by remember { mutableStateOf(true) }
+    var ttsVoiceId by remember { mutableStateOf(0) } // TTS 음성 ID 선택
+
+    val sentenceState by viewModel.sentenceState.collectAsState()
+
+    // TimePicker와 DatePicker 상태 생성
+    val timePickerState = rememberTimePickerState()
+    val datePickerState = rememberDatePickerState()
+
+    // 선택된 시간과 날짜를 업데이트하는 로직
+    LaunchedEffect(timePickerState.hour, timePickerState.minute) {
+        selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
+    }
+
+    LaunchedEffect(datePickerState.selectedDateMillis) {
+        datePickerState.selectedDateMillis?.let {
+            selectedDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+    }
+
+    // UI 구성Modifier.fillMaxSize()
+    Column(modifier =Modifier.padding(16.dp) ) {
+//        // 문장 입력 필드
+//        TextField(
+//            value = content,
+//            onValueChange = { content = it },
+//            modifier = Modifier.fillMaxWidth(),
+//            placeholder = { Text("문장을 입력하세요...") }
+//        )
+//
+//        Spacer(modifier = Modifier.height(16.dp))
+//
+//        // 시간 및 날짜 선택 (랜덤 설정이 아닐 경우)
+//        if (!isRandom) {
+//            TimePicker (
+//                state = timePickerState,
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//            Spacer(modifier = Modifier.height(16.dp))
+//
+//            DatePicker (
+//                state = datePickerState,
+//                modifier = Modifier.fillMaxWidth()
+//            )
+//        }
+//
+//        // 랜덤 알람 설정 토글
+//        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+//            Switch(
+//                checked = isRandom,
+//                onCheckedChange = { isRandom = it }
+//            )
+//            Text("랜덤 알람 설정")
+//        }
+//
+//        // 진동 활성화 토글
+//        Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+//            Switch(
+//                checked = vibrationEnabled,
+//                onCheckedChange = { vibrationEnabled = it }
+//            )
+//            Text("진동 활성화")
+//        }
+//
+//        // TTS 음성 ID 선택 (예시로 간단한 숫자 입력 필드 사용)
+//        TextField(
+//            value = ttsVoiceId.toString(),
+//            onValueChange = { ttsVoiceId = it.toIntOrNull() ?: 0 },
+//            modifier = Modifier.fillMaxWidth(),
+//            placeholder = { Text("TTS 음성 ID를 입력하세요") }
+//        )
+//
+//        // 하단 버튼
+//        Row(
+//            modifier = Modifier.fillMaxWidth(),
+//            horizontalArrangement = Arrangement.SpaceBetween
+//        ) {
+//            Button(onClick = onCancel) {
+//                Text("취소")
+//            }
+//            Button(onClick = {
+//                viewModel.createSentence(
+//                    content = content,
+//                    time = selectedTime?.toString(),
+//                    date = selectedDate?.toString(),
+//                    isRandom = isRandom,
+//                    ttsVoiceId = ttsVoiceId,
+//                    vibrationEnabled = vibrationEnabled
+//                )
+//            }) {
+//                Text("확인")
+//            }
+//        }Modifier
+//                .weight(1f)  // 남은 공간을 모두 차지하도록 설정
+//                .fillMaxWidth(),
+        //
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            item {
+                // 문장 입력 필드
+                TextField(
+                    value = content,
+                    onValueChange = { content = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("문장을 입력하세요...") }
+                )
+            }
+
+            item {
+                // 시간 및 날짜 선택 (랜덤 설정이 아닐 경우)
+                if (!isRandom) {
+                    TimePicker(
+                        state = timePickerState,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(16.dp))
+                    DatePicker(
+                        state = datePickerState,
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+            }
+
+            item {
+                // 랜덤 알람 설정 토글
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+                    Switch(
+                        checked = isRandom,
+                        onCheckedChange = { isRandom = it }
+                    )
+                    Text("랜덤 알람 설정")
+                }
+            }
+
+            item {
+                // 진동 활성화 토글
+                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 8.dp)) {
+                    Switch(
+                        checked = vibrationEnabled,
+                        onCheckedChange = { vibrationEnabled = it }
+                    )
+                    Text("진동 활성화")
+                }
+            }
+
+            item {
+                // TTS 음성 ID 선택
+                TextField(
+                    value = ttsVoiceId.toString(),
+                    onValueChange = { ttsVoiceId = it.toIntOrNull() ?: 0 },
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("TTS 음성 ID를 입력하세요") }
+                )
+            }
+
+            item {
+                // 하단 버튼
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
+                ) {
+                    Button(onClick = onCancel) {
+                        Text("취소")
+                    }
+                    Button(onClick = {
+                        viewModel.createSentence(
+                            content = content,
+                            time = selectedTime?.toString(),
+                            date = selectedDate?.toString(),
+                            isRandom = isRandom,
+                            ttsVoiceId = ttsVoiceId,
+                            vibrationEnabled = vibrationEnabled
+                        )
+                    }) {
+                        Text("확인")
+                    }
+                }
+            }
+        }
+
+        // 상태에 따른 처리 결과 표시
+        when (sentenceState) {
+            is SentenceViewModel.SentenceState.Loading -> {
+                CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
+            }
+            is SentenceViewModel.SentenceState.Success -> {
+                LaunchedEffect(Unit) {
+                    onSubmitSuccess() // 성공 시 콜백 호출
+                }
+                Text("문장이 성공적으로 생성되었습니다!", color = MaterialTheme.colorScheme.primary)
+            }
+            is SentenceViewModel.SentenceState.Error -> {
+                val errorMessage = (sentenceState as SentenceViewModel.SentenceState.Error).message
+                Text(errorMessage, color = MaterialTheme.colorScheme.error)
+            }
+            else -> {}
+        }
+    }
+}

@@ -56,11 +56,11 @@ class AuthViewModel(
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
-                val response = apiService.login(user)
-                if (response.isSuccessful) {
+                val response = apiService.login(user)//장고db에서 user정보를 가져와라 반환의 구조는 authresponse형태로
+                if (response.isSuccessful) {//파이썬에서 값을 가져오는 것을 성공했다면.
                     response.body()?.let {
                         val accessToken = it.access //이게 문제였음 beaer한번더 적음
-                        val refreshToken = it.refresh
+                        val refreshToken = it.refresh//여기서 authresponse의 형태로 받아온 값을 사용하는 것이다.
 
                         Log.d("Login", "Access Token: $accessToken")
                         Log.d("Login", "Refresh Token: $refreshToken")
