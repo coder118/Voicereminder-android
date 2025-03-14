@@ -100,10 +100,34 @@ class AuthViewModel(
                     return@launch
                 }
 
-                val response = apiService.logout( "Bearer $accessToken",
+                var response = apiService.logout( "Bearer $accessToken",
                     mapOf("refresh" to refreshToken)   ) // Refresh 토큰 포함)
 
                 Log.d("Logout333", "Response received: ${response.raw()}")
+
+                if (!response.isSuccessful && response.code() == 401) {
+                    // 액세스 토큰이 만료된 경우 리프레시 토큰으로 새로운 액세스 토큰 요청
+                    val refreshResponse = apiService.refreshToken(mapOf("refresh" to refreshToken))
+                    if (refreshResponse.isSuccessful) {
+                        val newAccessToken = refreshResponse.body()?.get("access") as? String
+                        if (newAccessToken != null) {
+                            tokenManager.saveAccessToken(newAccessToken)
+                            // 새로운 액세스 토큰으로 로그아웃 재시도
+                            response = apiService.logout("Bearer $newAccessToken", mapOf("refresh" to refreshToken))
+                        } else {
+                            onError("새 액세스 토큰을 받지 못했습니다.")
+                            return@launch
+                        }
+                    } else {
+                        // 리프레시 토큰도 만료된 경우
+                        onError("세션이 만료되었습니다. 다시 로그인 해주세요.")
+                        // 로그인 화면으로 리디렉션하는 로직 추가
+                        _authState.value = AuthState.Idle // 로그아웃 시 상태 초기화
+                        onSuccess()
+//                        redirectToLoginScreen()
+//                        return@launch
+                    }
+                }
 
                 if (response.isSuccessful) {
                     tokenManager.clearTokens() // 로컬에 저장된 토큰 삭제

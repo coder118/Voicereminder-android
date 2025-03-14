@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response
-
 class SentenceViewModel(
     private val apiService: ApiService,
     private val tokenManager: TokenManager
@@ -22,21 +21,8 @@ class SentenceViewModel(
     sealed class SentenceState {
         object Idle : SentenceState()
         object Loading : SentenceState()
-        data class Success(val notificationResponse: NotificationResponse) : SentenceState()
+        object Success : SentenceState()  // Unit 응답으로 간소화
         data class Error(val message: String) : SentenceState()
-    }
-
-    suspend fun updateUserSettings(ttsVoiceId: Int, vibrationEnabled: Boolean): Boolean {
-        return try {
-            val token = "Bearer ${tokenManager.getAccessToken()}"
-            val response = apiService.updateUserSettings(
-                token,
-                UserSettings(ttsVoiceId, vibrationEnabled)
-            )
-            response.isSuccessful
-        } catch (e: Exception) {
-            false
-        }
     }
 
     fun createSentence(
@@ -50,42 +36,30 @@ class SentenceViewModel(
         viewModelScope.launch {
             _sentenceState.value = SentenceState.Loading
 
-            // 1. 사용자 설정 먼저 업데이트
-            val settingsUpdated = updateUserSettings(ttsVoiceId, vibrationEnabled)
-
-            if (!settingsUpdated) {
-                _sentenceState.value = SentenceState.Error("사용자 설정 업데이트 실패")
-                return@launch
-            }
-
-            // 2. 문장 생성 요청
             try {
                 val token = "Bearer ${tokenManager.getAccessToken()}"
-                val notificationSettings = NotificationSettings(
-                    id = 0, // 서버에서 생성될 ID
-                    username = "", // 서버에서 설정될 사용자 이름
-                    repeat_mode = if (isRandom) "random" else "once",
-                    notification_time = time,
-                    notification_date = date,
-                    notification_count = 1
-                )
-                //장고에서 값을 저장하고 돌아올때 값을 반환?
-                val response = apiService.createSentence(
-                    token,
-                    mapOf(
-                        "content" to content,
-                        "notification_settings" to notificationSettings
+                val request = SentenceCreateRequest(//글쓰기화면에서 문장, 알림 정보, tts설정, 진동 유무의 값을 보냄
+                    sentence = SentenceContent(content = content),
+
+                    notificationSettings = NotificationSettings(
+                        repeat_mode = if (isRandom) "random" else "once",
+                        notification_time = time,
+                        notification_date = date
+                    ),
+
+                    userSettings =UserSettings(
+                        tts_voice = ttsVoiceId,
+                        vibration_enabled = vibrationEnabled
                     )
                 )
 
-                if (response.isSuccessful) {//장고에서 값을 받아오는데 성공하면 실행 데이터의 구조는 notificationResponse
-                    response.body()?.let { notificationResponse ->
-                        _sentenceState.value = SentenceState.Success(notificationResponse)//unit으로 response를 받기 때문에 이렇게 값을 반환받을 이유가 없다. 임시로 수정을 함
-                    } ?: run {
-                        _sentenceState.value = SentenceState.Error("응답 데이터가 없습니다.")
-                    }
+                val response = apiService.createSentence(token, request)
+
+                if (response.isSuccessful) {
+                    _sentenceState.value = SentenceState.Success
                 } else {
-                    _sentenceState.value = SentenceState.Error("문장 저장 실패: ${response.code()}")
+                    val errorBody = response.errorBody()?.string() ?: "Unknown error"
+                    _sentenceState.value = SentenceState.Error("저장 실패: $errorBody")
                 }
             } catch (e: Exception) {
                 _sentenceState.value = SentenceState.Error("네트워크 오류: ${e.message}")
@@ -93,5 +67,4 @@ class SentenceViewModel(
         }
     }
 }
-
 

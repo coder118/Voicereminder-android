@@ -27,6 +27,9 @@ interface ApiService {
     @POST("logout/")
     suspend fun logout(@Header("Authorization") token: String, @Body body: Map<String, String?>): Response<Unit>
 
+    @POST("token/refresh/")//리프레쉬토큰 확인 코드
+    suspend fun refreshToken(@Body body: Map<String, String?>): Response<Map<String, String>>
+
     //계정삭제 엔드 포인트
     @POST("delete-account/")
     suspend fun deleteAccount(@Header("Authorization") token: String, @Body body: Map<String, String?>): Response<Unit>
@@ -42,8 +45,8 @@ interface ApiService {
     @POST("sentences/create/")
     suspend fun createSentence(//만들어진 문장을 보낸다.
         @Header("Authorization") token: String,
-        @Body data: Map<String, Any>
-    ): Response<NotificationResponse>//원래는 Unit으로 반환을 받아야 한다.
+        @Body data:  SentenceCreateRequest
+    ): Response<Unit>//원래는 Unit으로 반환을 받아야 한다.
 
     @GET("notifications/check/")
     suspend fun checkNotifications(
