@@ -1,6 +1,9 @@
 package com.example.voicereminder.auth
 
+import android.net.http.HttpException
+import android.os.Build
 import android.util.Log
+import androidx.annotation.RequiresExtension
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.voicereminder.model.User
@@ -9,6 +12,8 @@ import com.example.voicereminder.utils.TokenManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import java.io.IOException
+import java.net.SocketTimeoutException
 
 class AuthViewModel(
     private val apiService: ApiService,
@@ -52,6 +57,7 @@ class AuthViewModel(
         }
     }
 
+    @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun login(user: User) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
@@ -74,8 +80,23 @@ class AuthViewModel(
                 } else {
                     _authState.value = AuthState.Error("로그인 실패: ${response.code()}")
                 }
+            }
+//            catch (e: Exception) {
+//                Log.d("network problem","fuc",e)
+//                _authState.value = AuthState.Error("네트워크 오류: ${e.message}")
+//            }
+            catch (e: HttpException) {
+                Log.e("Login", "HTTP 예외", e)
+                _authState.value = AuthState.Error("HTTP 오류: ${e}")
+            } catch (e: SocketTimeoutException) {
+                Log.e("Login", "소켓 타임아웃", e)
+                _authState.value = AuthState.Error("서버 응답 시간 초과")
+            } catch (e: IOException) {
+                Log.e("Login", "네트워크 IO 예외", e)
+                _authState.value = AuthState.Error("네트워크 연결 오류")
             } catch (e: Exception) {
-                _authState.value = AuthState.Error("네트워크 오류: ${e.message}")
+                Log.e("Login", "알 수 없는 오류", e)
+                _authState.value = AuthState.Error("알 수 없는 오류: ${e.message}")
             }
         }
     }
