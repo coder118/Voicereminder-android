@@ -42,7 +42,7 @@ interface ApiService {
     ): Response<Unit>
 
     // 문장 생성 엔드포인트
-    @POST("sentences/create/")
+    @POST("sentences_create/")
     suspend fun createSentence(//만들어진 문장을 보낸다.
         @Header("Authorization") token: String,
         @Body data:  SentenceCreateRequest

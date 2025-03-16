@@ -107,7 +107,7 @@ fun RegisterScreen(
                     errorMessage = "비밀번호가 일치하지 않습니다."
                 } else {
                     errorMessage = null
-                    val newUser = User(username, password, null, vibrationEnabled)
+                    val newUser = User(username, password, vibrationEnabled)
                     viewModel.register(newUser)
                 }
             },

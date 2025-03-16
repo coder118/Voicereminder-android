@@ -6,7 +6,7 @@ import retrofit2.converter.gson.GsonConverterFactory
 import java.util.concurrent.TimeUnit
 
 object RetrofitInstance {//
-    private const val BASE_URL = "https://10.0.2.2:8000" // 에뮬레이터에서 로컬 서버 접근
+    private const val BASE_URL = "http://10.0.2.2:8000" // 에뮬레이터에서 로컬 서버 접근
 
     private val okHttpClient = OkHttpClient.Builder()
         .connectTimeout(30, TimeUnit.SECONDS)  // 연결 타임아웃 30초

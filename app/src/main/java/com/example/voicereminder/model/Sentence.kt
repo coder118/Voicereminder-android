@@ -12,7 +12,7 @@ data class NotificationSettings(
     val repeat_mode: String,
     val notification_time: String?,
     val notification_date: String?,
-    val notification_count: Int = 1
+    //val notification_count: Int = 1
 )
 
 data class UserSettings(//TTS 음성 ID와 진동 설정 여부를 포함
