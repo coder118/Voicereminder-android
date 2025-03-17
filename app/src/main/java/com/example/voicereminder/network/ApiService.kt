@@ -7,8 +7,10 @@ import com.example.voicereminder.model.AuthResponse
 import com.example.voicereminder.model.*
 import retrofit2.http.Header
 import retrofit2.Response
+import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
+import retrofit2.http.Path
 
 interface ApiService {
 //    @GET("tests/")
@@ -48,8 +50,28 @@ interface ApiService {
         @Body data:  SentenceCreateRequest
     ): Response<Unit>//원래는 Unit으로 반환을 받아야 한다.
 
-    @GET("notifications/check/")
+    @GET("notifications_check/")
     suspend fun checkNotifications(
         @Header("Authorization") token: String
     ): Response<List<NotificationResponse>>//생성된 문장이나 알림,진동,tts모든 정보를 받아온다. 위의 로그인 하는 것처럼 함수를 만들어서 it.000해서 사용이 가능해보인다.
+
+
+    // 문장 수정 (예: PATCH /sentences/{id}/ 로 가정)
+    @PATCH("sentences/{id}/")
+    suspend fun updateSentence(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int,
+        @Body data: SentenceCreateRequest
+    ): Response<Unit>
+
+    // 문장 삭제 (예: DELETE /sentences/{id}/ 로 가정)
+    @DELETE("sentences/{id}/")
+    suspend fun deleteSentence(
+        @Header("Authorization") token: String,
+        @Path("id") id: Int
+    ): Response<Unit>
+
+
+
+
 }

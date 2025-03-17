@@ -19,7 +19,7 @@ import java.time.ZoneId
 @OptIn(ExperimentalMaterial3Api::class) // 실험적 API 사용 선언
 @Composable
 fun CreateSentenceScreen(
-    viewModel: SentenceViewModel,
+    sentenceViewModel: SentenceViewModel,
     onCancel: () -> Unit,
     onSubmitSuccess: () -> Unit
 ) {
@@ -30,7 +30,7 @@ fun CreateSentenceScreen(
     var vibrationEnabled by remember { mutableStateOf(true) }
     var ttsVoiceId by remember { mutableStateOf(0) } // TTS 음성 ID 선택
 
-    val sentenceState by viewModel.sentenceState.collectAsState()
+    val sentenceState by sentenceViewModel.sentenceState.collectAsState()
 
     // TimePicker와 DatePicker 상태 생성
     val timePickerState = rememberTimePickerState()
@@ -108,7 +108,7 @@ fun CreateSentenceScreen(
 //                Text("취소")
 //            }
 //            Button(onClick = {
-//                viewModel.createSentence(
+//                sentenceViewModel.createSentence(
 //                    content = content,
 //                    time = selectedTime?.toString(),
 //                    date = selectedDate?.toString(),
@@ -194,7 +194,7 @@ fun CreateSentenceScreen(
                         Text("취소")
                     }
                     Button(onClick = {
-                        viewModel.createSentence(
+                        sentenceViewModel.createSentence(
                             content = content,
                             time = selectedTime?.toString(),
                             date = selectedDate?.toString(),

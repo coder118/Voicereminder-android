@@ -27,13 +27,16 @@ import retrofit2.Response
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.compose.runtime.remember
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import com.example.voicereminder.auth.AuthViewModel
 import com.example.voicereminder.auth.LoginScreen
 import com.example.voicereminder.auth.RegisterScreen
 import com.example.voicereminder.main.CreateSentenceScreen
+import com.example.voicereminder.main.EditSentenceScreen
 import com.example.voicereminder.main.MainScreen
 import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.ui.theme.VoiceReminderTheme
@@ -85,6 +88,7 @@ class MainActivity : ComponentActivity() {
                         // 메인 화면 구현 부분
                         MainScreen(
                             viewModel = authViewModel,
+                            sentenceViewModel = sentenceViewModel,
 
                             onLogoutSuccess = { authViewModel.setLoggedIn(false)
                                 navController.navigate("login") {
@@ -101,13 +105,17 @@ class MainActivity : ComponentActivity() {
                                 navController.navigate("createSentence")
                             },
 
+                            onNavigateToEditSentence = { item ->
+                                navController.navigate("editScreen/${item.id}")
+                            }
+
 
                         )
 
                     }
                     composable("createSentence") {
                         CreateSentenceScreen(
-                            viewModel = sentenceViewModel,
+                            sentenceViewModel = sentenceViewModel,
                             onCancel = { navController.popBackStack() },
                             onSubmitSuccess = {
                                 navController.popBackStack()
@@ -115,6 +123,26 @@ class MainActivity : ComponentActivity() {
                             }
                         )
                     }
+
+                    composable(
+                        "editScreen/{sentenceId}",
+                        arguments = listOf(navArgument("sentenceId") { type = NavType.IntType })
+                    ) { backStackEntry ->
+                        val sentenceId = backStackEntry.arguments?.getInt("sentenceId") ?: -1
+                        val originalItem = sentenceViewModel.getSentenceById(sentenceId)
+                        originalItem?.let {
+                            EditSentenceScreen(
+                                sentenceViewModel = sentenceViewModel,
+                                originalItem = it,
+                                onCancel = { navController.popBackStack() },
+                                onUpdateSuccess = { navController.popBackStack() }
+                            )
+                        } ?: run {
+                            // 원본 아이템을 찾지 못했을 때의 처리
+                            Text("문장을 찾을 수 없습니다.")
+                        }
+                    }
+
                 }
             }
         }
