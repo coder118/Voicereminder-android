@@ -1,8 +1,18 @@
 package com.example.voicereminder.model
 
+
+data class TTSVoiceResponse(//tts의 가져올 데이터 구조
+    val id: Int,
+    val name: String,
+    val language: String,
+    val voice_id: String
+)
+
 data class Sentence(//필요없을 수도
     //val username: String,  // 사용자 ID 추가
+
     val content: String,
+    val tts_voice: Int,
     val is_ai_generated: Boolean = false,
     val created_at: String
 )
@@ -16,10 +26,12 @@ data class NotificationSettings(
 )
 
 data class UserSettings(//TTS 음성 ID와 진동 설정 여부를 포함
-    val tts_voice: Int,
+
     val vibration_enabled: Boolean
 )
-data class SentenceContent(val content: String)
+data class SentenceContent(
+    val content: String,
+    val tts_voice: Int)
 
 data class SentenceCreateRequest(
     val sentence: SentenceContent,

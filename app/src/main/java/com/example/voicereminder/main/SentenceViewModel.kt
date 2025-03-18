@@ -1,6 +1,7 @@
 package com.example.voicereminder.main
 
 import android.util.Log
+import androidx.compose.runtime.mutableStateListOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.voicereminder.model.*
@@ -22,11 +23,44 @@ class SentenceViewModel(
     private val _notificationList = MutableStateFlow<List<NotificationResponse>>(emptyList())
     val notificationList = _notificationList.asStateFlow()
 
+//    private val _ttsVoices = mutableStateListOf<TTSVoiceResponse>()
+//    val ttsVoices: List<TTSVoiceResponse> get() = _ttsVoices
+
+    private val _ttsVoices = MutableStateFlow<List<TTSVoiceResponse>>(emptyList())
+    val ttsVoices: StateFlow<List<TTSVoiceResponse>> = _ttsVoices.asStateFlow()
+
+    private val _selectedTTSVoiceId = MutableStateFlow<Int?>(null)
+    val selectedTTSVoiceId: StateFlow<Int?> = _selectedTTSVoiceId.asStateFlow()
+
+
     sealed class SentenceState {
         object Idle : SentenceState()
         object Loading : SentenceState()
         object Success : SentenceState()  // Unit 응답으로 간소화
         data class Error(val message: String) : SentenceState()
+    }
+
+
+    // 음성 목록 로드
+    fun loadTTSVoices() {
+        viewModelScope.launch {
+            try {
+                val response = apiService.getTTSVoices("Bearer ${tokenManager.getAccessToken()}")
+                if(response.isSuccessful) {
+//                    _ttsVoices.clear()
+//                    _ttsVoices.addAll(response.body() ?: emptyList())
+                    _ttsVoices.value = response.body() ?: emptyList()
+                }
+            } catch(e: Exception) {
+                // 에러 처리
+            }
+        }
+    }
+
+    // 음성 선택 처리
+    fun selectTTSVoice(voiceId: Int) {
+        // 선택된 voiceId를 저장하는 로직
+        _selectedTTSVoiceId.value = voiceId
     }
 
     // -----------------------
@@ -55,16 +89,21 @@ class SentenceViewModel(
         time: String?,
         date: String?,
         isRandom: Boolean,
-        ttsVoiceId: Int,
+
         vibrationEnabled: Boolean
     ) {
         viewModelScope.launch {
             _sentenceState.value = SentenceState.Loading
 
             try {
+                // 선택된 TTS 음성 ID 가져오기
+                val ttsVoiceId = _selectedTTSVoiceId.value
+                    ?: throw Exception("TTS 음성을 선택해주세요.")
+
                 val token = tokenManager.getAccessToken()
                 val request = SentenceCreateRequest(//글쓰기화면에서 문장, 알림 정보, tts설정, 진동 유무의 값을 보냄
-                    sentence = SentenceContent(content = content),
+                    sentence = SentenceContent(content = content,
+                        tts_voice = ttsVoiceId),
 
                     notificationSettings = NotificationSettings(
                         repeat_mode = if (isRandom) "random" else "once",
@@ -73,7 +112,7 @@ class SentenceViewModel(
                     ),
 
                     userSettings =UserSettings(
-                        tts_voice = ttsVoiceId,
+
                         vibration_enabled = vibrationEnabled
                     )
                 )
@@ -92,6 +131,10 @@ class SentenceViewModel(
         }
     }
 
+    fun resetState() { //문장을 생성하고 확인버튼으로 끌때 문장의 상태를 초기화시켜줌
+        _sentenceState.value = SentenceState.Idle
+    }
+
 
     // -----------------------
     // 문장 수정
@@ -102,7 +145,7 @@ class SentenceViewModel(
         time: String?,
         date: String?,
         isRandom: Boolean,
-        ttsVoiceId: Int,
+
         vibrationEnabled: Boolean,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
@@ -111,8 +154,11 @@ class SentenceViewModel(
             try {
                 _sentenceState.value = SentenceState.Loading
 
+                val ttsVoiceId = _selectedTTSVoiceId.value
+                    ?: throw Exception("TTS 음성을 선택해주세요.")
                 val request = SentenceCreateRequest(
-                    sentence = SentenceContent(content = content),
+                    sentence = SentenceContent(content = content,
+                        tts_voice = ttsVoiceId),
 
                     notificationSettings = NotificationSettings(
                         repeat_mode = if (isRandom) "random" else "once",
@@ -121,12 +167,12 @@ class SentenceViewModel(
                     ),
 
                     userSettings =UserSettings(
-                        tts_voice = ttsVoiceId,
+
                         vibration_enabled = vibrationEnabled
                     )
                 )
 
-                val token = {tokenManager.getAccessToken()}
+                val token = tokenManager.getAccessToken()
                 val response = apiService.updateSentence("Bearer $token", id, request)
 
                 if (response.isSuccessful) {

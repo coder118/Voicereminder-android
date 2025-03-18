@@ -113,6 +113,7 @@ class MainActivity : ComponentActivity() {
                         )
 
                     }
+
                     composable("createSentence") {
                         CreateSentenceScreen(
                             sentenceViewModel = sentenceViewModel,

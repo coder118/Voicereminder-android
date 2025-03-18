@@ -309,7 +309,7 @@ fun NotificationItem(
 //
             Text(text = "내용: ${item.sentence.content ?: "없음"}")
             Text(text = "날짜: ${item.notificationSettings.notification_date ?: "없음"} / 시간: ${item.notificationSettings.notification_time ?: "없음"}")
-            Text(text = "진동: ${if (item.userSettings.vibration_enabled) "ON" else "OFF"}, TTS ID: ${item.userSettings.tts_voice}")
+            Text(text = "진동: ${if (item.userSettings.vibration_enabled) "ON" else "OFF"}, TTS ID: ${item.sentence.tts_voice}")
             Text(text = "랜덤알람: ${if (item.notificationSettings.repeat_mode == "random") "ON" else "OFF"}")
 
         }

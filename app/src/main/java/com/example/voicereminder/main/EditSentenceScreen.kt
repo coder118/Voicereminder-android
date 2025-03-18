@@ -11,6 +11,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.model.NotificationResponse
+import com.example.voicereminder.model.TTSVoiceResponse
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -32,7 +33,7 @@ fun EditSentenceScreen(
     // isRandom을 Boolean으로 설정
     var isRandom by remember { mutableStateOf(originalItem.notificationSettings.repeat_mode == "random") }
     var vibrationEnabled by remember { mutableStateOf(originalItem.userSettings.vibration_enabled) }
-    var ttsVoiceId by remember { mutableStateOf(originalItem.userSettings.tts_voice) }
+
 
     val sentenceState by sentenceViewModel.sentenceState.collectAsState()
 
@@ -40,7 +41,9 @@ fun EditSentenceScreen(
         initialHour = selectedTime?.hour ?: 12,
         initialMinute = selectedTime?.minute ?: 0
     )
-    val datePickerState = rememberDatePickerState()
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+    )
 
     // timePickerState 변경 시 selectedTime 업데이트
     LaunchedEffect(timePickerState.hour, timePickerState.minute) {
@@ -51,6 +54,16 @@ fun EditSentenceScreen(
     LaunchedEffect(datePickerState.selectedDateMillis) {
         datePickerState.selectedDateMillis?.let {
             selectedDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+        }
+    }
+
+    LaunchedEffect(Unit) {//tts의 값을 로딩해서 가져온다.
+        sentenceViewModel.loadTTSVoices()
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            sentenceViewModel.resetState()
         }
     }
 
@@ -102,12 +115,10 @@ fun EditSentenceScreen(
                 }
             }
             item {
-                TextField(
-                    value = ttsVoiceId.toString(),
-                    onValueChange = { ttsVoiceId = it.toIntOrNull() ?: 0 },
-                    modifier = Modifier.fillMaxWidth(),
-                    placeholder = { Text("TTS 음성 ID를 입력하세요") },
-                    label = { Text("TTS 음성 ID") }
+                TTSSoundSelector(
+                    sentenceviewModel = sentenceViewModel,
+                    initialVoiceId = originalItem.sentence.tts_voice,
+                    modifier = Modifier.padding(vertical = 8.dp)
                 )
             }
             item {
@@ -126,7 +137,7 @@ fun EditSentenceScreen(
                             time = selectedTime?.toString(),
                             date = selectedDate?.toString(),
                             isRandom = isRandom,
-                            ttsVoiceId = ttsVoiceId,
+
                             vibrationEnabled = vibrationEnabled,
                             onSuccess = { onUpdateSuccess() },
                             onError = { /* 에러 처리 */ }
@@ -143,6 +154,10 @@ fun EditSentenceScreen(
                 CircularProgressIndicator(modifier = Modifier.align(Alignment.CenterHorizontally))
             }
             is SentenceViewModel.SentenceState.Success -> {
+                LaunchedEffect(Unit) {
+                    onUpdateSuccess()
+                    sentenceViewModel.resetState()
+                }
                 Text("문장이 성공적으로 수정되었습니다!", color = MaterialTheme.colorScheme.primary)
             }
             is SentenceViewModel.SentenceState.Error -> {
@@ -150,6 +165,46 @@ fun EditSentenceScreen(
                 Text(errorMessage, color = MaterialTheme.colorScheme.error)
             }
             else -> {}
+        }
+    }
+}
+
+@Composable
+fun TTSSoundSelector(
+    sentenceviewModel: SentenceViewModel,
+    initialVoiceId: Int,
+    modifier: Modifier = Modifier
+) {
+    val ttsVoices by sentenceviewModel.ttsVoices.collectAsState()
+    var expanded by remember { mutableStateOf(false) }
+    var selectedVoice by remember { mutableStateOf<TTSVoiceResponse?>(null) }
+
+    LaunchedEffect(ttsVoices) {//저장되어있던 tts보이스 첫번째값을 찾는다.
+        selectedVoice = ttsVoices.find { it.id == initialVoiceId }
+    }
+
+    Box(modifier = modifier.fillMaxWidth()) {
+        OutlinedButton(
+            onClick = { expanded = true },
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(selectedVoice?.name ?: "TTS 음성 선택")
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            ttsVoices.forEach { voice ->
+                DropdownMenuItem(
+                    text = { Text("${voice.name} (${voice.language})") },
+                    onClick = {
+                        selectedVoice = voice
+                        sentenceviewModel.selectTTSVoice(voice.id)
+                        expanded = false
+                    }
+                )
+            }
         }
     }
 }

@@ -44,20 +44,35 @@ interface ApiService {
     ): Response<Unit>
 
     // 문장 생성 엔드포인트
-    @POST("sentences_create/")
-    suspend fun createSentence(//만들어진 문장을 보낸다.
-        @Header("Authorization") token: String,
-        @Body data:  SentenceCreateRequest
-    ): Response<Unit>//원래는 Unit으로 반환을 받아야 한다.
+//    @POST("sentences_create/")
+//    suspend fun createSentence(//만들어진 문장을 보낸다.
+//        @Header("Authorization") token: String,
+//        @Body data:  SentenceCreateRequest
+//    ): Response<Unit>//원래는 Unit으로 반환을 받아야 한다.
 
-    @GET("notifications_check/")
+    @POST("sentences/create_sentence/")
+    suspend fun createSentence(
+        @Header("Authorization") token: String,
+        @Body request: SentenceCreateRequest
+    ): Response<NotificationResponse>
+
+//    @GET("notifications_check/")
+//    suspend fun checkNotifications(
+//        @Header("Authorization") token: String
+//    ): Response<List<NotificationResponse>>//생성된 문장이나 알림,진동,tts모든 정보를 받아온다. 위의 로그인 하는 것처럼 함수를 만들어서 it.000해서 사용이 가능해보인다.
+
+    @GET("tts-voices/list_voices/")//tts의 목록을 가져오는 api
+    suspend fun getTTSVoices(
+        @Header("Authorization") token: String
+    ): Response<List<TTSVoiceResponse>>
+
+    @GET("notifications/check/")
     suspend fun checkNotifications(
         @Header("Authorization") token: String
-    ): Response<List<NotificationResponse>>//생성된 문장이나 알림,진동,tts모든 정보를 받아온다. 위의 로그인 하는 것처럼 함수를 만들어서 it.000해서 사용이 가능해보인다.
-
+    ): Response<List<NotificationResponse>>
 
     // 문장 수정 (예: PATCH /sentences/{id}/ 로 가정)
-    @PATCH("sentences/{id}/")
+    @PATCH("sentences/{id}/update_sentence/")
     suspend fun updateSentence(
         @Header("Authorization") token: String,
         @Path("id") id: Int,

@@ -112,6 +112,8 @@ class AuthViewModel(
     fun logout(onSuccess: () -> Unit, onError: (String) -> Unit) {
         viewModelScope.launch {
             try {
+                _authState.value = AuthState.Idle // 로그아웃 시 상태 초기화
+                onSuccess()
                 val accessToken = tokenManager.getAccessToken()
                 val refreshToken = tokenManager.getRefreshToken() // Refresh 토큰 가져오기
                 Log.d("Logout11", "Access Token: $accessToken")
