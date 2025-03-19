@@ -27,7 +27,7 @@ fun EditSentenceScreen(
     onCancel: () -> Unit,
     onUpdateSuccess: () -> Unit
 ) {
-    // 기존 데이터를 초기값으로 설정
+    // 기존 데이터를 초기값으로 설정 git git
     var content by remember { mutableStateOf(originalItem.sentence.content ?: "") }
     var selectedTime by remember { mutableStateOf(parseTime(originalItem.notificationSettings.notification_time)) }
     var selectedDate by remember { mutableStateOf(parseDate(originalItem.notificationSettings.notification_date)) }
