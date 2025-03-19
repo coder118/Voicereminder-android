@@ -224,7 +224,9 @@ fun MainScreen(
                                 // 문장 삭제
                                 sentenceViewModel.deleteSentence(
                                     id = clickedItem.id,
-                                    onSuccess = { /* 필요하면 스낵바나 메시지 */ },
+                                    onSuccess = { /* 필요하면 스낵바나 메시지 */
+                                        sentenceViewModel.getSentence(onError = {})
+                                                },
                                     onError = { msg -> errorMessage = msg }
                                 )
                             }

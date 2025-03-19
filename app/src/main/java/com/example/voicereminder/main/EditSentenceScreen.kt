@@ -12,6 +12,7 @@ import androidx.compose.ui.unit.dp
 import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.model.NotificationResponse
 import com.example.voicereminder.model.TTSVoiceResponse
+import kotlinx.coroutines.delay
 import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
@@ -41,8 +42,14 @@ fun EditSentenceScreen(
         initialHour = selectedTime?.hour ?: 12,
         initialMinute = selectedTime?.minute ?: 0
     )
+    val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli(),
+        selectableDates = object : SelectableDates {//오늘 이전의 데이터 값은 선택이 되지 않게 만드는 기능
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis >= todayMillis
+            }
+        }
     )
 
     // timePickerState 변경 시 selectedTime 업데이트
@@ -155,8 +162,11 @@ fun EditSentenceScreen(
             }
             is SentenceViewModel.SentenceState.Success -> {
                 LaunchedEffect(Unit) {
+
                     onUpdateSuccess()
+                    //delay(100).also { println("100ms 지연") }
                     sentenceViewModel.resetState()
+
                 }
                 Text("문장이 성공적으로 수정되었습니다!", color = MaterialTheme.colorScheme.primary)
             }
@@ -179,8 +189,13 @@ fun TTSSoundSelector(
     var expanded by remember { mutableStateOf(false) }
     var selectedVoice by remember { mutableStateOf<TTSVoiceResponse?>(null) }
 
-    LaunchedEffect(ttsVoices) {//저장되어있던 tts보이스 첫번째값을 찾는다.
+    LaunchedEffect(ttsVoices) {//저장되어있던 tts보이스를 화면에 표현해줌
         selectedVoice = ttsVoices.find { it.id == initialVoiceId }
+    }
+
+    // 초기값 설정 추가
+    LaunchedEffect(initialVoiceId) {
+        sentenceviewModel.selectTTSVoice(initialVoiceId)
     }
 
     Box(modifier = modifier.fillMaxWidth()) {

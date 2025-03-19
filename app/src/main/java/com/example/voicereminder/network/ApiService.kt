@@ -80,7 +80,7 @@ interface ApiService {
     ): Response<Unit>
 
     // 문장 삭제 (예: DELETE /sentences/{id}/ 로 가정)
-    @DELETE("sentences/{id}/")
+    @DELETE("sentences/{id}/delete_sentence/")
     suspend fun deleteSentence(
         @Header("Authorization") token: String,
         @Path("id") id: Int

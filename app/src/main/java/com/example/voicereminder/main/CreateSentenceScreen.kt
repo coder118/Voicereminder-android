@@ -34,17 +34,27 @@ fun CreateSentenceScreen(
     val sentenceState by sentenceViewModel.sentenceState.collectAsState()
 
     // TimePicker와 DatePicker 상태 생성
+//    val timeInputState = rememberTimeInputState()
     val timePickerState = rememberTimePickerState()
-    val datePickerState = rememberDatePickerState()
-
     // 선택된 시간과 날짜를 업데이트하는 로직
     LaunchedEffect(timePickerState.hour, timePickerState.minute) {
         selectedTime = LocalTime.of(timePickerState.hour, timePickerState.minute)
     }
 
+
+    val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val datePickerState = rememberDatePickerState(initialSelectedDateMillis = todayMillis,
+        selectableDates = object : SelectableDates {//오늘이전의 날짜값은 선택이 되지 않는다.
+            override fun isSelectableDate(utcTimeMillis: Long): Boolean {
+                return utcTimeMillis >= todayMillis
+            }
+        }
+    )
+
     LaunchedEffect(datePickerState.selectedDateMillis) {
         datePickerState.selectedDateMillis?.let {
             selectedDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+
         }
     }
     LaunchedEffect(Unit) {
@@ -150,6 +160,8 @@ fun CreateSentenceScreen(
             }
         }
 
+
+
         // 상태에 따른 처리 결과 표시
         when (sentenceState) {
             is SentenceViewModel.SentenceState.Loading -> {
@@ -169,6 +181,10 @@ fun CreateSentenceScreen(
             else -> {}
         }
     }
+
+
+
+
 }
 
 @Composable

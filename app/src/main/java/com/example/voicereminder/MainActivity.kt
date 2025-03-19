@@ -1,32 +1,14 @@
 package com.example.voicereminder
 
+
 import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.ui.Modifier
-
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.unit.dp
-
-
-import android.util.Log
-import com.example.voicereminder.network.RetrofitInstance
-import retrofit2.Call
-import retrofit2.Callback
-import retrofit2.Response
-
-
-import androidx.activity.compose.setContent
-import androidx.annotation.RequiresApi
-import androidx.compose.runtime.remember
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -39,8 +21,12 @@ import com.example.voicereminder.main.CreateSentenceScreen
 import com.example.voicereminder.main.EditSentenceScreen
 import com.example.voicereminder.main.MainScreen
 import com.example.voicereminder.main.SentenceViewModel
+import com.example.voicereminder.network.RetrofitInstance
 import com.example.voicereminder.ui.theme.VoiceReminderTheme
 import com.example.voicereminder.utils.TokenManager
+import androidx.lifecycle.lifecycleScope
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 
 class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
@@ -136,7 +122,14 @@ class MainActivity : ComponentActivity() {
                                 sentenceViewModel = sentenceViewModel,
                                 originalItem = it,
                                 onCancel = { navController.popBackStack() },
-                                onUpdateSuccess = { navController.popBackStack() }
+                                onUpdateSuccess = {
+                                    lifecycleScope.launch {
+                                        delay(1500)// 1.5초 대기
+                                    navController.navigate("main") {
+                                        popUpTo("main") { inclusive = true }
+                                    }
+                                    }
+                                }
                             )
                         } ?: run {
                             // 원본 아이템을 찾지 못했을 때의 처리

@@ -29,7 +29,7 @@ class SentenceViewModel(
     private val _ttsVoices = MutableStateFlow<List<TTSVoiceResponse>>(emptyList())
     val ttsVoices: StateFlow<List<TTSVoiceResponse>> = _ttsVoices.asStateFlow()
 
-    private val _selectedTTSVoiceId = MutableStateFlow<Int?>(null)
+    private val _selectedTTSVoiceId = MutableStateFlow<Int>(0)
     val selectedTTSVoiceId: StateFlow<Int?> = _selectedTTSVoiceId.asStateFlow()
 
 
@@ -155,7 +155,10 @@ class SentenceViewModel(
                 _sentenceState.value = SentenceState.Loading
 
                 val ttsVoiceId = _selectedTTSVoiceId.value
-                    ?: throw Exception("TTS 음성을 선택해주세요.")
+                Log.d("Initial TTS Voice ID","me${ttsVoiceId}")
+
+//                val ttsVoiceId = selectedTTSVoiceId
+
                 val request = SentenceCreateRequest(
                     sentence = SentenceContent(content = content,
                         tts_voice = ttsVoiceId),
@@ -205,15 +208,18 @@ class SentenceViewModel(
 
                 val token =tokenManager.getAccessToken()
                 val response = apiService.deleteSentence("Bearer $token", id)
-
-                if (response.isSuccessful) {
+                Log.d("DeleteResponse", "Response: $response")
+                Log.d("ResponseCode", "Response Code: ${response.code()}")
+                if (response.isSuccessful || response.code() == 204) {
                     // 목록 새로고침
                     getSentence(onError = {})
                     onSuccess()
                 } else {
+                    Log.e("DeleteError", "Failed with code: ${response.code()}")
                     onError("문장 삭제 실패: ${response.code()}")
                 }
             } catch (e: Exception) {
+                Log.e("DeleteSentenceError", "Exception occurred: ${e.message}")
                 onError(e.message ?: "알 수 없는 오류")
             }
         }
