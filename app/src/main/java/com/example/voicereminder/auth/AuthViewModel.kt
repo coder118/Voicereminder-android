@@ -6,18 +6,25 @@ import android.util.Log
 import androidx.annotation.RequiresExtension
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.voicereminder.MyFirebaseMessagingService
 import com.example.voicereminder.model.User
+import com.example.voicereminder.model.registerUser
 import com.example.voicereminder.network.ApiService
 import com.example.voicereminder.utils.TokenManager
+import com.google.firebase.Firebase
+import com.google.firebase.messaging.messaging
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.tasks.await
 import java.io.IOException
 import java.net.SocketTimeoutException
 
+
 class AuthViewModel(
     private val apiService: ApiService,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val myFirebaseMessagingService: MyFirebaseMessagingService = MyFirebaseMessagingService()
 ) : ViewModel() {
 
     private val _isLoggedIn = MutableStateFlow(false)//로그아웃을 구현하기 위함
@@ -41,7 +48,7 @@ class AuthViewModel(
         _authState.value = AuthState.Error(message)
     }
 
-    fun register(user: User) {
+    fun register(user: registerUser) {
         viewModelScope.launch {
             _authState.value = AuthState.Loading
             try {
@@ -67,12 +74,24 @@ class AuthViewModel(
                     response.body()?.let {
                         val accessToken = it.access //이게 문제였음 beaer한번더 적음
                         val refreshToken = it.refresh//여기서 authresponse의 형태로 받아온 값을 사용하는 것이다.
-
+                        val username = it.username
                         Log.d("Login", "Access Token: $accessToken")
                         Log.d("Login", "Refresh Token: $refreshToken")
+                        // 사용자 ID 저장
+                        tokenManager.saveUserId(username)
 
                         tokenManager.saveAccessToken(accessToken)
                         tokenManager.saveRefreshToken(refreshToken)
+
+                        // FCM 토큰을 서버에 전송
+
+                        try {
+                            val token = Firebase.messaging.token.await()
+                            Log.d("FCMtoken", "fcm_ Token: $token")
+                            myFirebaseMessagingService.sendTokenToServer(token, accessToken) // accesstoken으로 전송을 해준다.
+                        } catch (e: Exception) {
+                            Log.e("FCM", "FCM 토큰 생성 실패", e)
+                        }
 
 
                         _authState.value = AuthState.Success(it.username)
@@ -154,6 +173,7 @@ class AuthViewModel(
 
                 if (response.isSuccessful) {
                     tokenManager.clearTokens() // 로컬에 저장된 토큰 삭제
+                    Firebase.messaging.deleteToken()//재성성되지 않게 토큰도 삭제
                     _authState.value = AuthState.Idle // 로그아웃 시 상태 초기화
                     onSuccess()
                 } else {
@@ -195,5 +215,26 @@ class AuthViewModel(
             }
         }
     }
+
+
+    fun updateFcmToken(fcmToken: String) {
+        viewModelScope.launch {
+            try {
+                val response = apiService.updateFcmToken(
+                    "Bearer ${tokenManager.getAccessToken()}",
+                    mapOf("fcm_token" to fcmToken)
+                )
+               
+                if (response.isSuccessful) {
+                    // FCM 토큰 업데이트 성공
+                } else {
+                    // FCM 토큰 업데이트 실패
+                }
+            } catch (e: Exception) {
+                // 네트워크 오류 등
+            }
+        }
+    }
+
 
 }

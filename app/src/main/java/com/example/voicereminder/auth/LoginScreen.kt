@@ -1,5 +1,8 @@
 package com.example.voicereminder.auth
 
+import android.os.Build
+import android.util.Log
+import androidx.annotation.RequiresExtension
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -8,7 +11,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.voicereminder.model.User
+import com.google.firebase.messaging.FirebaseMessaging
 
+@RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
 fun LoginScreen(
     viewModel: AuthViewModel,
@@ -20,6 +25,8 @@ fun LoginScreen(
 
     val authState by viewModel.authState.collectAsState()
 
+    var fcmToken by remember { mutableStateOf<String?>(null) }
+
     LaunchedEffect(authState) {
         when (authState) {
             is AuthViewModel.AuthState.Success -> onLoginSuccess()
@@ -27,6 +34,22 @@ fun LoginScreen(
             else -> {}
         }
     }
+
+//    LaunchedEffect(Unit) {//로그인 화면에서 바로 fcmtoken생성
+//        try {
+//            FirebaseMessaging.getInstance().token
+//                .addOnCompleteListener { task ->
+//                    if (task.isSuccessful) {
+//                        fcmToken = task.result
+//                        Log.d("FCM", "토큰 생성 성공: $fcmToken")
+//                    } else {
+//                        Log.e("FCM", "토큰 생성 실패", task.exception)
+//                    }
+//                }
+//        } catch (e: Exception) {
+//            Log.e("FCM", "FCM 토큰 가져오기 중 예외 발생", e)
+//        }
+//    }
 
     Column(
         modifier = Modifier
@@ -76,7 +99,10 @@ fun LoginScreen(
                 if (username.isBlank() || password.isBlank()) {
                     viewModel.setError("모든 필드를 입력해주세요")
                 } else {
-                    viewModel.login(User(username, password))
+                    viewModel.login(User(username, password,fcm_token = null))
+//                    fcmToken?.let { token ->
+//                        viewModel.login(User(username, password, fcm_token = token))
+//                    } ?: viewModel.setError("FCM 토큰을 가져오는데 실패했습니다.")
                 }
             },
             modifier = Modifier.fillMaxWidth()

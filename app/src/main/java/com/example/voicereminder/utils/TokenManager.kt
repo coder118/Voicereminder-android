@@ -24,9 +24,20 @@ class TokenManager(context: Context) {
     }
     // Refresh 토큰 조회
     fun getRefreshToken(): String? = prefs.getString("refresh_token", null)
+
+    // 사용자 ID 저장
+    fun saveUserId(userId: String) {
+        prefs.edit { putString("user_id", userId) }
+    }
+
+    // 사용자 ID 조회
+    fun getUserId(): String? = prefs.getString("user_id", null)
+
     // 토큰 삭제 (로그아웃 시)
     fun clearTokens() {
-        prefs.edit() { remove("access_token")
+        prefs.edit() {
+            remove("user_id")
+            remove("access_token")
             remove("refresh_token") }
     }
 }

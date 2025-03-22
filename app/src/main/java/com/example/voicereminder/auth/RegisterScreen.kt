@@ -8,7 +8,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
-import com.example.voicereminder.model.User
+import com.example.voicereminder.model.registerUser
 
 @Composable
 fun RegisterScreen(
@@ -21,6 +21,7 @@ fun RegisterScreen(
     var confirmPassword by remember { mutableStateOf("") }
     var vibrationEnabled by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var fcmtoken by remember { mutableStateOf<String?>(null) }
 
     val authState by viewModel.authState.collectAsState()
 
@@ -107,7 +108,8 @@ fun RegisterScreen(
                     errorMessage = "비밀번호가 일치하지 않습니다."
                 } else {
                     errorMessage = null
-                    val newUser = User(username, password, vibrationEnabled)
+
+                    val newUser = registerUser(username, password,vibrationEnabled)
                     viewModel.register(newUser)
                 }
             },

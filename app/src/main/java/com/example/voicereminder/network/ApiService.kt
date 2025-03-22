@@ -20,7 +20,7 @@ interface ApiService {
 //    fun createTest(@Body test: Test): Call<Test>
 
     @POST("register/")
-    suspend fun register(@Body user: User): Response<Unit>
+    suspend fun register(@Body user: registerUser): Response<Unit>
 
     @POST("login/")
     suspend fun login(@Body user: User): Response<AuthResponse>
@@ -84,6 +84,13 @@ interface ApiService {
     suspend fun deleteSentence(
         @Header("Authorization") token: String,
         @Path("id") id: Int
+    ): Response<Unit>
+
+
+    @POST("update_fcm_token/")
+    suspend fun updateFcmToken(
+        @Header("Authorization") token: String,
+        @Body fcmToken: Map<String, String>
     ): Response<Unit>
 
 
