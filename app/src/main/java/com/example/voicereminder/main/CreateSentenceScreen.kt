@@ -46,7 +46,14 @@ fun CreateSentenceScreen(
     val datePickerState = rememberDatePickerState(initialSelectedDateMillis = todayMillis,
         selectableDates = object : SelectableDates {//오늘이전의 날짜값은 선택이 되지 않는다.
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis >= todayMillis
+
+                // UTC 밀리초를 현재 시간대의 날짜로 변환
+                val selectedDate = Instant.ofEpochMilli(utcTimeMillis)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                return !selectedDate.isBefore(LocalDate.now()) // 오늘 포함 이후 날짜만 선택 가능
+
+//                return utcTimeMillis >= todayMillis
             }
         }
     )

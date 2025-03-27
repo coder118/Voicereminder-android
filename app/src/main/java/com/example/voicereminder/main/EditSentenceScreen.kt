@@ -42,12 +42,23 @@ fun EditSentenceScreen(
         initialHour = selectedTime?.hour ?: 12,
         initialMinute = selectedTime?.minute ?: 0
     )
+
+
     val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli(),
+        initialSelectedDateMillis = selectedDate?.let { date ->
+            // 날짜 비교 후 최종 값 결정 오늘이 27일인데 26일로 기존 알람이 설정이 되어있으면 자동으로 오늘 27일을 값으로 사용
+            maxOf(
+                date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
+                todayMillis
+            )
+        } ?: todayMillis,  // null인 경우 오늘 날짜 사용
         selectableDates = object : SelectableDates {//오늘 이전의 데이터 값은 선택이 되지 않게 만드는 기능
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
-                return utcTimeMillis >= todayMillis
+                val selectedDate = Instant.ofEpochMilli(utcTimeMillis)
+                    .atZone(ZoneId.systemDefault())
+                    .toLocalDate()
+                return !selectedDate.isBefore(LocalDate.now())
             }
         }
     )
@@ -246,9 +257,15 @@ fun parseTime(timeStr: String?): LocalTime? {
 @RequiresApi(Build.VERSION_CODES.O)
 fun parseDate(dateStr: String?): LocalDate? {
     return try {
-        if (!dateStr.isNullOrEmpty()) {
-            LocalDate.parse(dateStr)
-        } else null
+//        if (!dateStr.isNullOrEmpty()) {
+//            LocalDate.parse(dateStr)
+//        } else null
+        dateStr?.let {
+            // 명시적으로 시간대 적용 (하루 시작 시간 00:00 기준)
+            LocalDate.parse(it)
+                .atStartOfDay(ZoneId.systemDefault()) // ← 핵심 추가 부분
+                .toLocalDate()
+        }
     } catch (e: Exception) {
         null
     }
