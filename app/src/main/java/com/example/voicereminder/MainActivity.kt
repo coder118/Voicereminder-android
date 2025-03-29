@@ -1,16 +1,12 @@
 package com.example.voicereminder
 
 
-import android.content.ContentValues.TAG
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.annotation.RequiresApi
 import androidx.annotation.RequiresExtension
-import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.navigation.NavType
@@ -28,9 +24,9 @@ import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.network.RetrofitInstance
 import com.example.voicereminder.ui.theme.VoiceReminderTheme
 import com.example.voicereminder.utils.TokenManager
+import com.example.voicereminder.tts.TTSView
 import androidx.lifecycle.lifecycleScope
-import com.google.android.gms.tasks.OnCompleteListener
-import com.google.firebase.messaging.FirebaseMessaging
+import com.example.voicereminder.tts.TTSscreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
@@ -39,6 +35,11 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        val ttsView = TTSView()
+//        val ttsClient = ttsView.initializeTtsClient(context)
+
+
 
         val tokenManager = TokenManager(this)
         val authViewModel = AuthViewModel(//로그인,회원가입,로그아웃
@@ -123,12 +124,16 @@ class MainActivity : ComponentActivity() {
 
                             onNavigateToEditSentence = { item ->
                                 navController.navigate("editScreen/${item.id}")
-                            }
+                            },
+
+                            onNavigateToTTS = { navController.navigate("tts") }
 
 
                         )
 
                     }
+
+                    composable("tts") { TTSscreen() }
 
                     composable("createSentence") {
                         CreateSentenceScreen(
