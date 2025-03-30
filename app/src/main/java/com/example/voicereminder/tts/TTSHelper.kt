@@ -12,12 +12,12 @@ import java.io.File
 
 object TTSHelper {
     suspend fun synthesizeText(
-        context: Context,
+        appContext: Context,
         text: String,
         languageCode: String = "ko-KR"
     ): File? = withContext(Dispatchers.IO) {
         try { // 1. raw 폴더에서 서비스 계정 키 파일 읽기
-            val credentialsStream = context.resources.openRawResource(R.raw.voicereminder_app_d9862bebb234)
+            val credentialsStream = appContext.resources.openRawResource(R.raw.voicereminder_app_d9862bebb234)
             val credentials = GoogleCredentials.fromStream(credentialsStream)
 
             // 2. 인증된 클라이언트 생성
@@ -35,7 +35,7 @@ object TTSHelper {
                     .build()
 
                 val response = ttsClient.synthesizeSpeech(input, voice, audioConfig)
-                val tempFile = File.createTempFile("tts_", ".mp3", context.cacheDir)
+                val tempFile = File.createTempFile("tts_", ".mp3", appContext.cacheDir)
                 tempFile.outputStream().use { it.write(response.audioContent.toByteArray()) }
                 tempFile
             }

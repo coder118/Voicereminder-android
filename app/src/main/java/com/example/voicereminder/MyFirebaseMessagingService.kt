@@ -4,6 +4,7 @@ import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.content.ContentValues.TAG
 import android.content.Context
+import android.media.MediaPlayer
 import android.os.Build
 import android.util.Log
 import androidx.core.app.NotificationCompat
@@ -15,15 +16,18 @@ import com.google.firebase.messaging.RemoteMessage
 import org.greenrobot.eventbus.EventBus
 import com.example.voicereminder.model.NotificationEvent
 import com.example.voicereminder.network.ApiService
+import com.example.voicereminder.tts.TTSHelper
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import android.net.Uri
+import java.io.File
 
 class MyFirebaseMessagingService : FirebaseMessagingService() {
     private val apiService: ApiService by lazy {
         RetrofitInstance.apiService // Retrofit 인스턴스를 가져오는 방법에 따라 수정
     }
-
+    private var mediaPlayer: MediaPlayer? = null
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         // 새 토큰이 생성될 때마다 서버로 전송
@@ -63,7 +67,10 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
             // 알림 표시
             showNotification(title, body)
-
+            notification.body?.let { safeBody ->
+                playTTS(safeBody) // 널이 아닐 때만 실행
+                Log.d("tts!!!!!","wokring")
+            }
             // 앱 내 알림 업데이트를 위한 이벤트 발생
             EventBus.getDefault().post(NotificationEvent(title, body))
         }
@@ -92,5 +99,49 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
         notificationManager.notify(0, notificationBuilder.build())
     }
 
+    private fun playTTS(text: String) {
+        CoroutineScope(Dispatchers.IO).launch {
+            TTSHelper.synthesizeText(applicationContext, text)?.let { file ->
+                Log.d("playtts","tts wokring")
+                playAudioFile(applicationContext, file)
+            }
+        }
+    }
+
+    private fun playAudioFile(appContext: Context, file: File) {
+        try {
+            Log.d("playaudiofile","play wokring")
+            // 기존 재생 중인 음성 정리
+            releaseMediaPlayer()
+
+            // 새 MediaPlayer 인스턴스 생성
+            mediaPlayer = MediaPlayer().apply {
+                setDataSource(appContext, Uri.fromFile(file))
+                prepareAsync() // 비동기 준비
+
+                setOnPreparedListener { mp ->
+                    mp.start() // 준비 완료 시 재생 시작
+                }
+
+                setOnCompletionListener {
+                    releaseMediaPlayer()
+                    file.delete() // 재생 완료 후 임시 파일 삭제
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            releaseMediaPlayer()
+        }
+    }
+
+    private fun releaseMediaPlayer() {
+        mediaPlayer?.let {
+            if (it.isPlaying) {
+                it.stop()
+            }
+            it.release()
+        }
+        mediaPlayer = null
+    }
 
 }
