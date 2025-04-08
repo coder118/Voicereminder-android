@@ -1,6 +1,10 @@
 package com.example.voicereminder.main
 
 
+import android.app.AlarmManager
+import android.app.PendingIntent
+import android.content.Context
+import android.content.Intent
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -15,94 +19,12 @@ import com.example.voicereminder.model.NotificationResponse
 import kotlinx.coroutines.launch
 
 import androidx.compose.foundation.lazy.items
+import com.example.voicereminder.AlarmReceiver
+import com.example.voicereminder.auth.AuthViewModel.AuthState
 
 
-//
-//@Composable
-//fun MainScreen(
-//    viewModel: AuthViewModel,
-//    onLogoutSuccess: () -> Unit, // 로그아웃 성공 시 호출될 콜백 함수
-//    onDeleteAccountSuccess: () -> Unit,// 회우너 탈퇴성공시 콜백
-//    onNavigateToCreateSentence: () -> Unit // 새로운 파라미터 추가
-//) {
-//    var errorMessage by remember { mutableStateOf<String?>(null) }
-//    var showDeleteConfirmDialog by remember { mutableStateOf(false) }
-//
-//
-//    Column(
-//        modifier = Modifier
-//            .fillMaxSize()
-//            .padding(32.dp),
-//        verticalArrangement = Arrangement.Center,
-//        horizontalAlignment = Alignment.CenterHorizontally
-//    ) {
-//        Text(
-//            text = "메인 화면",
-//            style = MaterialTheme.typography.headlineLarge,
-//            modifier = Modifier.padding(bottom = 48.dp)
-//        )
-//
-//        Button(
-//            onClick = { onNavigateToCreateSentence() }, // 글쓰기 화면으로 이동
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            Text("글쓰기")
-//        }
-//
-//        Button(
-//            onClick = {
-//                viewModel.logout(
-//                    onSuccess = { onLogoutSuccess() } ,
-//                    onError = { errorMessage = it }
-//                )
-//            },
-//            modifier = Modifier.fillMaxWidth()
-//        ) {
-//            Text("로그아웃")
-//        }
-//
-//        errorMessage?.let {
-//            Spacer(modifier = Modifier.height(16.dp))
-//            Text(
-//                text = it,
-//                color = MaterialTheme.colorScheme.error,
-//                modifier = Modifier.padding(top = 8.dp)
-//            )
-//        }
-//        //회원 탈퇴
-//        Button(onClick = { showDeleteConfirmDialog = true }) {
-//            Text("회원 탈퇴")
-//        }
-//
-//        if (showDeleteConfirmDialog) {
-//            AlertDialog(
-//                onDismissRequest = { showDeleteConfirmDialog = false },
-//                title = { Text("회원 탈퇴") },
-//                text = { Text("정말로 회원 탈퇴하시겠습니까?") },
-//                confirmButton = {
-//                    Button(onClick = {
-//                        viewModel.deleteAccount(
-//                            onSuccess = {
-//                                showDeleteConfirmDialog = false
-//                                onDeleteAccountSuccess()
-//                            },
-//                            onError = { /* 에러 처리 */ }
-//                        )
-//                    }) {
-//                        Text("확인")
-//                    }
-//                },
-//                dismissButton = {
-//                    Button(onClick = { showDeleteConfirmDialog = false }) {
-//                        Text("취소")
-//                    }
-//                }
-//            )
-//        }
-//
-//    }
-//}
-
+import android.util.Log
+import androidx.compose.ui.platform.LocalContext
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -114,6 +36,7 @@ fun MainScreen(
     onLogoutSuccess: () -> Unit,
     onDeleteAccountSuccess: () -> Unit,
     onNavigateToCreateSentence: () -> Unit,
+    onNavigateToTTS:()->Unit,
     //onNavigateToChangePassword: () -> Unit,
     // 문장 수정 화면으로 이동할 때, 클릭한 NotificationResponse를 넘겨주기
     onNavigateToEditSentence: (NotificationResponse) -> Unit
@@ -126,13 +49,29 @@ fun MainScreen(
     // 서버에서 받아온 알림(문장) 리스트
     val notificationList by sentenceViewModel.notificationList.collectAsState()
 
+    val context = LocalContext.current
     // 화면 진입 시 서버 데이터 불러오기
     LaunchedEffect(Unit) {
+
         sentenceViewModel.getSentence(onError = { msg -> errorMessage = msg })
     }
 
     // 상단 우측 아이콘 클릭 시 열릴 DropdownMenu 제어
     var menuExpanded by remember { mutableStateOf(false) }
+
+    // Alarm 취소 함수 (최상단에 정의)
+    fun cancelAlarm(context: Context, notificationId: Int) {
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        val intent = Intent(context, AlarmReceiver::class.java)
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            notificationId, // 삭제할 알람과 동일한 ID 사용
+            intent,
+            PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
+        )
+        alarmManager.cancel(pendingIntent)
+        Log.d("Alarm", "알람 취소됨: ID $notificationId")
+    }
 
     // Scaffold로 전체 레이아웃 구성
     Scaffold(
@@ -186,6 +125,30 @@ fun MainScreen(
             )
         },
 
+//        floatingActionButton = {
+//            Row {
+//                // 왼쪽에 TTS 버튼 추가
+//                FloatingActionButton(
+//                    onClick = onNavigateToTTS, // 👈 TTS 화면으로 이동
+//                    modifier = Modifier.padding(end = 16.dp)
+//                ) {
+//                    Icon(
+//                        painter = painterResource(id = android.R.drawable.ic_btn_speak_now),
+//                        contentDescription = "TTS 버튼"
+//                    )
+//                }
+//
+//                // 기존 글쓰기 버튼
+//                FloatingActionButton(
+//                    onClick = onNavigateToCreateSentence
+//                ) {
+//                    Icon(
+//                        painter = painterResource(id = android.R.drawable.ic_input_add),
+//                        contentDescription = "글쓰기 버튼"
+//                    )
+//                }
+//            }
+//        },
         // 오른쪽 하단에 글쓰기 버튼
         floatingActionButton = {
             FloatingActionButton(
@@ -225,6 +188,8 @@ fun MainScreen(
                                 sentenceViewModel.deleteSentence(
                                     id = clickedItem.id,
                                     onSuccess = { /* 필요하면 스낵바나 메시지 */
+                                        cancelAlarm(context = context, notificationId = clickedItem.id)
+
                                         sentenceViewModel.getSentence(onError = {})
                                                 },
                                     onError = { msg -> errorMessage = msg }

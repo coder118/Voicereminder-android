@@ -1,5 +1,6 @@
 package com.example.voicereminder.auth
 
+import android.app.AlertDialog
 import android.net.http.HttpException
 import android.os.Build
 import android.util.Log
@@ -29,6 +30,7 @@ class AuthViewModel(
 
     private val _isLoggedIn = MutableStateFlow(false)//로그아웃을 구현하기 위함
     val isLoggedIn: StateFlow<Boolean> = _isLoggedIn//로그인 상태를 mainactivity에서 확인할 수 있음
+    private var userId: Int? = null
 
     init {
         _isLoggedIn.value = tokenManager.getAccessToken() != null
@@ -42,6 +44,7 @@ class AuthViewModel(
         object Loading : AuthState()
         data class Success(val username: String) : AuthState()
         data class Error(val message: String) : AuthState()
+        data class ShowPopup(val message: String) : AuthState() // 팝업 상태 추가
     }
     // 새로운 에러 상태를 설정하는 함수
     fun setError(message: String) {
@@ -63,6 +66,13 @@ class AuthViewModel(
             }
         }
     }
+    fun setUserId(id: Int) {
+        userId = id
+    }
+
+    fun getUserId(): Int? {
+        return userId
+    }
 
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     fun login(user: User) {
@@ -75,6 +85,9 @@ class AuthViewModel(
                         val accessToken = it.access //이게 문제였음 beaer한번더 적음
                         val refreshToken = it.refresh//여기서 authresponse의 형태로 받아온 값을 사용하는 것이다.
                         val username = it.username
+                        setUserId(it.id)
+
+                        val isLoggedIn = it.isLoggedIn // 서버에서 반환된 값 확인
                         Log.d("Login", "Access Token: $accessToken")
                         Log.d("Login", "Refresh Token: $refreshToken")
                         // 사용자 ID 저장
@@ -94,9 +107,16 @@ class AuthViewModel(
                         }
 
 
+
                         _authState.value = AuthState.Success(it.username)
                     }
-                } else {
+                }
+                else if (response.code() == 403) {  // 다른 기기에서 이미 로그인된 경우 실행되는 코드 에러 메세지 팝업을 띄운다.
+                    response.errorBody()?.string()?.let { errorMessage ->
+                        _authState.value = AuthState.ShowPopup(errorMessage)
+                    }
+                }
+                else {
                     _authState.value = AuthState.Error("로그인 실패: ${response.code()}")
                 }
             }
@@ -119,6 +139,7 @@ class AuthViewModel(
             }
         }
     }
+
 
     // 로그인하고 로그아웃 상태를 확인하는 코드
     fun setLoggedIn(value: Boolean) {

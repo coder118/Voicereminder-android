@@ -12,6 +12,7 @@ import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import com.example.voicereminder.model.User
 import com.google.firebase.messaging.FirebaseMessaging
+import androidx.compose.ui.platform.LocalContext
 
 @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
 @Composable
@@ -27,14 +28,27 @@ fun LoginScreen(
 
     var fcmToken by remember { mutableStateOf<String?>(null) }
 
+    var showPopup by remember { mutableStateOf(false) }
+    var popupMessage by remember { mutableStateOf("") }
+
+
     LaunchedEffect(authState) {
         when (authState) {
             is AuthViewModel.AuthState.Success -> onLoginSuccess()
             is AuthViewModel.AuthState.Idle -> {} // Idle 상태에서는 아무 작업도 하지 않음 로그 아웃할때 사용됨
+
+            is AuthViewModel.AuthState.ShowPopup -> {//같은 아이디로 여러기기에 로그인을 하려할때 띄우는 팝업
+                popupMessage = (authState as AuthViewModel.AuthState.ShowPopup).message
+                showPopup = true
+            }
             else -> {}
         }
     }
-
+    if (showPopup) {
+        ShowPopup(message = popupMessage) {
+            showPopup = false // 팝업 닫기
+        }
+    }
 //    LaunchedEffect(Unit) {//로그인 화면에서 바로 fcmtoken생성
 //        try {
 //            FirebaseMessaging.getInstance().token
@@ -117,4 +131,18 @@ fun LoginScreen(
             Text("회원가입 하러 가기")
         }
     }
+}
+
+@Composable//팝업띄우는 기능
+fun ShowPopup(message: String, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = { onDismiss() },
+        title = { Text("알림") },
+        text = { Text(message) },
+        confirmButton = {
+            Button(onClick = { onDismiss() }) {
+                Text("확인")
+            }
+        }
+    )
 }

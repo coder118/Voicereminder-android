@@ -24,11 +24,16 @@ import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.network.RetrofitInstance
 import com.example.voicereminder.ui.theme.VoiceReminderTheme
 import com.example.voicereminder.utils.TokenManager
-import com.example.voicereminder.tts.TTSView
+import com.example.voicereminder.tts.AudioPlayerService
+
 import androidx.lifecycle.lifecycleScope
-import com.example.voicereminder.tts.TTSscreen
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.util.Log
+import com.example.voicereminder.tts.PlaybackService
+import com.example.voicereminder.tts.TTSService
+
 
 class MainActivity : ComponentActivity() {
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
@@ -36,9 +41,17 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val ttsView = TTSView()
-//        val ttsClient = ttsView.initializeTtsClient(context)
-
+        val userId ="abc"// ViewModel에서 사용자 ID 가져오기
+        val intent = Intent(this@MainActivity, AudioPlayerService::class.java).apply {
+            putExtra("USER_ID", userId.toString()) // 사용자 ID 전달
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            Log.d("MainActivity11", "Starting Foreground Service")
+            startForegroundService(intent) // Foreground Service 시작
+        } else {
+            Log.d("22222", "Starting Background Service")
+            startService(intent) // 일반 서비스 시작 (Android O 미만)
+        }
 
 
         val tokenManager = TokenManager(this)
@@ -48,33 +61,27 @@ class MainActivity : ComponentActivity() {
         )
         val sentenceViewModel = SentenceViewModel(RetrofitInstance.apiService, tokenManager) //글작성
 
-        // FCM 토큰 가져오기 및 서버로 전송
-//        FirebaseMessaging.getInstance().token.addOnCompleteListener { task ->
-//            if (task.isSuccessful) {
-//                val token = task.result
-//                authViewModel.updateFcmToken(token)
-//            }
-//        }
 
-//        FirebaseMessaging.getInstance().token.addOnCompleteListener(OnCompleteListener { task ->
-//            if (!task.isSuccessful) {
-//                Log.w(TAG, "Fetching FCM registration token failed", task.exception)
-//                return@OnCompleteListener
-//            }
-//
-//            // Get new FCM registration token
-//            val token = task.result
-//
-//            // Log and toast
-//            val msg = getString(R.string.msg_token_fmt, token)
-//            Log.d(TAG, msg)
-//            Toast.makeText(baseContext, msg, Toast.LENGTH_SHORT).show()
-//        })
 
         setContent {
             VoiceReminderTheme {
                 val navController = rememberNavController()
                 val isLoggedIn by authViewModel.isLoggedIn.collectAsState()
+
+                // 알람 인텐트 처리 LaunchedEffect
+                LaunchedEffect(Unit) {
+                    Log.d("move to createsetense","move to createsentence")
+                    val navDestination = intent?.getStringExtra("NAV_DESTINATION")
+                    val alarmMessage = intent?.getStringExtra("ALARM_DATA")
+
+                    if (navDestination == "create_sentence") {
+                        navController.navigate("createSentence") {
+                            popUpTo("main") { inclusive = false }
+                        }
+                        // 필요 시 sentenceViewModel에 알람 데이터 전달
+                    }
+                }
+
                 NavHost(
                     navController = navController,
                     startDestination = if (isLoggedIn) "main" else "login"
@@ -82,7 +89,21 @@ class MainActivity : ComponentActivity() {
                     composable("login") {
                         LoginScreen(
                             viewModel = authViewModel,
-                            onLoginSuccess = { authViewModel.setLoggedIn(true)
+                            onLoginSuccess = {
+//                                val userId = authViewModel.getUserId() // ViewModel에서 사용자 ID 가져오기
+//                                val intent = Intent(this@MainActivity, TTSService::class.java).apply {
+//                                    putExtra("USER_ID", userId.toString()) // 사용자 ID 전달
+//                                }
+//                                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                                    Log.d("MainActivity11", "Starting Foreground Service")
+//                                    startForegroundService(intent) // Foreground Service 시작
+//                                } else {
+//                                    Log.d("22222", "Starting Background Service")
+//                                    startService(intent) // 일반 서비스 시작 (Android O 미만)
+//                                }
+
+
+                                authViewModel.setLoggedIn(true)
                                 navController.navigate("main") {
                                     popUpTo("login") { inclusive = true }
                                 } },
@@ -107,7 +128,12 @@ class MainActivity : ComponentActivity() {
                             viewModel = authViewModel,
                             sentenceViewModel = sentenceViewModel,
 
-                            onLogoutSuccess = { authViewModel.setLoggedIn(false)
+                            onLogoutSuccess = {
+                                // WebSocket 연결 종료
+                                val intent = Intent(this@MainActivity, TTSService::class.java)
+                                stopService(intent) // TTSService 종료
+
+                                authViewModel.setLoggedIn(false)
                                 navController.navigate("login") {
                                     popUpTo("main") { inclusive = true } } },
 
@@ -132,8 +158,6 @@ class MainActivity : ComponentActivity() {
                         )
 
                     }
-
-                    composable("tts") { TTSscreen() }
 
                     composable("createSentence") {
                         CreateSentenceScreen(

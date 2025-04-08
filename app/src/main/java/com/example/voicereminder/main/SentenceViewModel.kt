@@ -106,7 +106,7 @@ class SentenceViewModel(
                         tts_voice = ttsVoiceId),
 
                     notificationSettings = NotificationSettings(
-                        repeat_mode = if (isRandom) "random" else "once",
+                        repeat_mode = if (isRandom) "daily" else "once",
                         notification_time = time,
                         notification_date = date
                     ),
@@ -164,7 +164,7 @@ class SentenceViewModel(
                         tts_voice = ttsVoiceId),
 
                     notificationSettings = NotificationSettings(
-                        repeat_mode = if (isRandom) "random" else "once",
+                        repeat_mode = if (isRandom) "daily" else "once",
                         notification_time = time,
                         notification_date = date
                     ),

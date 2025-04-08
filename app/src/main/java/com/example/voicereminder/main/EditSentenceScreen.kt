@@ -17,6 +17,7 @@ import java.time.Instant
 import java.time.LocalDate
 import java.time.LocalTime
 import java.time.ZoneId
+import java.time.ZonedDateTime
 
 @RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
@@ -44,7 +45,12 @@ fun EditSentenceScreen(
     )
 
 
-    val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+//    val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
+    val todayMillis = ZonedDateTime.now(ZoneId.systemDefault())
+            .toLocalDate()
+            .atStartOfDay(ZoneId.systemDefault())
+            .toInstant()
+            .toEpochMilli()
     val datePickerState = rememberDatePickerState(
         initialSelectedDateMillis = selectedDate?.let { date ->
             // 날짜 비교 후 최종 값 결정 오늘이 27일인데 26일로 기존 알람이 설정이 되어있으면 자동으로 오늘 27일을 값으로 사용
@@ -85,7 +91,11 @@ fun EditSentenceScreen(
         }
     }
 
-    Column(modifier = Modifier.padding(16.dp)) {
+    val insets = WindowInsets.systemBars.asPaddingValues()
+    Column(modifier = Modifier
+        .fillMaxSize()
+        .padding(insets))
+    {
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.spacedBy(16.dp)

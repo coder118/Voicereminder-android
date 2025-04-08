@@ -5,12 +5,15 @@ import retrofit2.http.Body
 
 import com.example.voicereminder.model.AuthResponse
 import com.example.voicereminder.model.*
+import okhttp3.ResponseBody
 import retrofit2.http.Header
 import retrofit2.Response
 import retrofit2.http.DELETE
 import retrofit2.http.GET
 import retrofit2.http.PATCH
 import retrofit2.http.Path
+import retrofit2.http.Query
+import retrofit2.http.Streaming
 
 interface ApiService {
 //    @GET("tests/")
@@ -43,23 +46,11 @@ interface ApiService {
         @Body settings: UserSettings
     ): Response<Unit>
 
-    // 문장 생성 엔드포인트
-//    @POST("sentences_create/")
-//    suspend fun createSentence(//만들어진 문장을 보낸다.
-//        @Header("Authorization") token: String,
-//        @Body data:  SentenceCreateRequest
-//    ): Response<Unit>//원래는 Unit으로 반환을 받아야 한다.
-
     @POST("sentences/create_sentence/")
     suspend fun createSentence(
         @Header("Authorization") token: String,
         @Body request: SentenceCreateRequest
     ): Response<NotificationResponse>
-
-//    @GET("notifications_check/")
-//    suspend fun checkNotifications(
-//        @Header("Authorization") token: String
-//    ): Response<List<NotificationResponse>>//생성된 문장이나 알림,진동,tts모든 정보를 받아온다. 위의 로그인 하는 것처럼 함수를 만들어서 it.000해서 사용이 가능해보인다.
 
     @GET("tts-voices/list_voices/")//tts의 목록을 가져오는 api
     suspend fun getTTSVoices(
@@ -93,7 +84,17 @@ interface ApiService {
         @Body fcmToken: Map<String, String>
     ): Response<Unit>
 
+    //fcm을 받고 그 문장을 다시 tts로 전환시키기 위해 서버로 보내준다.
+    @Streaming
+    @GET("tts/sentence/")  // 경로 변경
+    suspend fun getTTSByNotification(
+        @Header("Authorization") token: String,
+        @Query("sentence_id") sentenceId: Long,  // Query 파라미터로 전달
+        @Query("user_id") userId: Long           // 필수 권한 검증용
+    ): Response<ResponseBody>
 
-
-
+    data class TTSResponse(
+        val audio: String,  // Base64
+        val notification_id: Long
+    )
 }
