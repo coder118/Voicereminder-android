@@ -31,15 +31,27 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import android.content.Intent
 import android.util.Log
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.repeatOnLifecycle
+import com.example.voicereminder.model.NotificationResponse
 import com.example.voicereminder.tts.PlaybackService
 import com.example.voicereminder.tts.TTSService
+import kotlinx.coroutines.flow.combine
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.Locale
+import java.util.Calendar
 
 
 class MainActivity : ComponentActivity() {
+
+    public lateinit var customAlarmManager: CustomAlarmManager //알람 매니저를 가져온다.
+
     @RequiresExtension(extension = Build.VERSION_CODES.S, version = 7)
     @RequiresApi(Build.VERSION_CODES.O)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
 
         val userId ="abc"// ViewModel에서 사용자 ID 가져오기
         val intent = Intent(this@MainActivity, AudioPlayerService::class.java).apply {
@@ -61,6 +73,31 @@ class MainActivity : ComponentActivity() {
         )
         val sentenceViewModel = SentenceViewModel(RetrofitInstance.apiService, tokenManager) //글작성
 
+
+        customAlarmManager = CustomAlarmManager(this)//알람매니저 초기화
+        // 시간 변경 관찰
+//        lifecycleScope.launch {
+//            repeatOnLifecycle(Lifecycle.State.STARTED) {
+//                sentenceViewModel.savedTime.combine(sentenceViewModel.savedDate) { time, date ->
+//                    Pair(time, date)
+//                }.collect { (time, date) ->
+//                    time?.let { t ->
+//                        date?.let { d ->
+//                            setAlarmFromDateTime(t, d)
+//                        }
+//                    }
+//                }
+//            }
+//        }
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                sentenceViewModel.notificationList.collect { notifications ->
+                    notifications.forEach { notification ->
+                        setupAlarmFromNotification(notification)
+                    }
+                }
+            }
+        }
 
 
         setContent {
@@ -198,6 +235,55 @@ class MainActivity : ComponentActivity() {
 
                 }
             }
+        }
+    }
+
+//    private fun setAlarmFromDateTime(timeStr: String, dateStr: String) {
+//        try {
+//            // 날짜 파싱 (예: "2025-04-09" → Date 객체)
+//            val dateFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
+//            val timeFormat = SimpleDateFormat("HH:mm", Locale.getDefault())
+//
+//            val date = dateFormat.parse(dateStr)
+//            val time = timeFormat.parse(timeStr)
+//
+//            // 캘린더 조합
+//            val calendar = Calendar.getInstance().apply {
+//                time = date
+//                set(Calendar.HOUR_OF_DAY, time.hours)
+//                set(Calendar.MINUTE, time.minutes)
+//                set(Calendar.SECOND, 0)
+//            }
+//
+//            // 알람 설정
+//            customAlarmManager.setAlarm(
+//                calendar.timeInMillis,
+//                "설정된 알람이 울립니다!"
+//            )
+//            Log.d("MainActivity", "Alarm set for: ${calendar.time}")
+//
+//        } catch (e: ParseException) {
+//            Log.e("DateTimeError", "파싱 실패: ${e.message}")
+//        }
+//    }
+
+    private fun setupAlarmFromNotification(notification: NotificationResponse) {
+        try {
+            // 날짜+시간 파싱 (예: "2025-04-10 14:30")
+            val dateTimeStr = "${notification.notificationSettings.notification_date} " +
+                    "${notification.notificationSettings.notification_time}"
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val alarmTime = sdf.parse(dateTimeStr)?.time ?: return
+            Log.d("setupAlarmFromNotification","setupAlarmFromNotification$alarmTime")
+            // 알람 설정
+            customAlarmManager.setAlarm(
+                notificationId = notification.id, // 서버에서 받은 고유 ID
+                timeInMillis = alarmTime,
+                message = notification.sentence.content ?: "알람이 울립니다"
+            )
+
+        } catch (e: Exception) {
+            Log.e("AlarmSetup", "알람 설정 실패: ${e.message}")
         }
     }
 }

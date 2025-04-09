@@ -25,6 +25,7 @@ import com.example.voicereminder.auth.AuthViewModel.AuthState
 
 import android.util.Log
 import androidx.compose.ui.platform.LocalContext
+import com.example.voicereminder.MainActivity
 
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -188,7 +189,8 @@ fun MainScreen(
                                 sentenceViewModel.deleteSentence(
                                     id = clickedItem.id,
                                     onSuccess = { /* 필요하면 스낵바나 메시지 */
-                                        cancelAlarm(context = context, notificationId = clickedItem.id)
+                                        //cancelAlarm(context = context, notificationId = clickedItem.id)
+                                        (context as? MainActivity)?.customAlarmManager?.cancelAlarm(clickedItem.id)
 
                                         sentenceViewModel.getSentence(onError = {})
                                                 },

@@ -18,6 +18,8 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         // 1. 인텐트에서 데이터 추출 (setAlarm()에서 보낸 "MESSAGE" 사용)
         Log.d("AlarmReceiver", "AlarmReceiver AlarmReceiver:")
+        // 알람 ID 추출 (필수!)
+        val notificationId = intent.getIntExtra("NOTIFICATION_ID", -1)
         val message = intent.getStringExtra("MESSAGE") ?: "알람이 울립니다!"
 
         // 2. 알림 채널 생성 (Android 8.0+ 필수)
@@ -45,7 +47,7 @@ class AlarmReceiver : BroadcastReceiver() {
         // 5. 알림 빌더
         val builder = NotificationCompat.Builder(context, "ALARM_CHANNEL")
             .setSmallIcon(R.drawable.ic_notification)  // ⚠️ 리소스 ID 확인
-            .setContentTitle("알람")
+            .setContentTitle("알람 (ID: $notificationId)")
             .setContentText(message)
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setContentIntent(pendingIntent)
@@ -56,7 +58,8 @@ class AlarmReceiver : BroadcastReceiver() {
         // 6. 알림 표시
         val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE)
                 as NotificationManager
-        notificationManager.notify(createUniqueId(), builder.build())
+        notificationManager.notify(notificationId, builder.build())
+//        createUniqueId()
     }
 
     // 알림 채널 생성 (Android 8.0+)

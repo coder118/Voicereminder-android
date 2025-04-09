@@ -280,7 +280,12 @@ fun CreateSentenceScreen(
 
                             vibrationEnabled = vibrationEnabled
                         )
-                        setAlarm()
+                        // SentenceViewModel에 데이터 저장
+                        sentenceViewModel.saveSentence(
+                            content = content,
+                            time = selectedTime?.toString(),
+                            date = selectedDate?.toString())
+
 
                     }) {
                         Text("확인")

@@ -12,6 +12,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import retrofit2.Response
+import java.text.SimpleDateFormat
+import java.util.Locale
+
 class SentenceViewModel(
     private val apiService: ApiService,
     private val tokenManager: TokenManager
@@ -31,6 +34,13 @@ class SentenceViewModel(
 
     private val _selectedTTSVoiceId = MutableStateFlow<Int>(0)
     val selectedTTSVoiceId: StateFlow<Int?> = _selectedTTSVoiceId.asStateFlow()
+
+
+    private val _savedTime = MutableStateFlow<String?>(null)
+    private val _savedDate = MutableStateFlow<String?>(null)
+
+    val savedTime: StateFlow<String?> = _savedTime
+    val savedDate: StateFlow<String?> = _savedDate
 
 
     sealed class SentenceState {
@@ -81,6 +91,31 @@ class SentenceViewModel(
             } catch (e: Exception) {
                 onError(e.message ?: "알 수 없는 오류")
             }
+        }
+    }
+
+    fun saveSentence(
+        content: String,
+        time: String?,
+        date: String?
+    ) {
+        viewModelScope.launch {
+            _savedTime.value = time
+            _savedDate.value = date
+        }
+    }
+    // 시간/날짜 파싱 함수
+    fun getParsedDateTime(): Long? {
+        return try {
+            val timeStr = _savedTime.value ?: return null
+            val dateStr = _savedDate.value ?: return null
+
+            val sdf = SimpleDateFormat("yyyy-MM-dd HH:mm", Locale.getDefault())
+            val combined = "$dateStr $timeStr"
+            sdf.parse(combined)?.time
+        } catch (e: Exception) {
+            Log.e("DateTime Parsing", "Error: ${e.message}")
+            null
         }
     }
 
