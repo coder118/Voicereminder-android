@@ -62,6 +62,16 @@ interface ApiService {
         @Header("Authorization") token: String
     ): Response<List<NotificationResponse>>
 
+    @PATCH("notifications/{notificationId}/update-trigger/")
+    suspend fun updateNotificationTrigger(
+        @Path("notificationId") id: Int,
+        @Body request: UpdateTriggerRequest,
+        @Header("Authorization") token: String
+    ): Response<Unit>
+
+
+
+
     // 문장 수정 (예: PATCH /sentences/{id}/ 로 가정)
     @PATCH("sentences/{id}/update_sentence/")
     suspend fun updateSentence(
@@ -88,9 +98,8 @@ interface ApiService {
     @Streaming
     @GET("tts/sentence/")  // 경로 변경
     suspend fun getTTSByNotification(
-        @Header("Authorization") token: String,
-        @Query("sentence_id") sentenceId: Long,  // Query 파라미터로 전달
-        @Query("user_id") userId: Long           // 필수 권한 검증용
+        @Header("Authorization") token: String, // Query 파라미터로 전달
+        @Query("notification_Id") NotificationID: Int           // 필수 권한 검증용
     ): Response<ResponseBody>
 
     data class TTSResponse(

@@ -143,7 +143,9 @@ class SentenceViewModel(
                     notificationSettings = NotificationSettings(
                         repeat_mode = if (isRandom) "daily" else "once",
                         notification_time = time,
-                        notification_date = date
+                        notification_date = date,
+                        is_triggered = false
+
                     ),
 
                     userSettings =UserSettings(
@@ -201,7 +203,8 @@ class SentenceViewModel(
                     notificationSettings = NotificationSettings(
                         repeat_mode = if (isRandom) "daily" else "once",
                         notification_time = time,
-                        notification_date = date
+                        notification_date = date,
+                        is_triggered = false//강제로 값을 flase로 바꿔준다. 수정을 한다는 것은 결국 시간을 수정하는 경우이기에 근데 기존의 시간값을 그대로 두고 수정할때는 문제가 생기겠네
                     ),
 
                     userSettings =UserSettings(

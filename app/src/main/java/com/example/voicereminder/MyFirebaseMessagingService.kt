@@ -78,7 +78,7 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
 
                 CoroutineScope(Dispatchers.IO).launch {
                     Log.d("fetchand play tts", "make tts ? userid n:$userId")
-                    fetchAndPlayTTS(sentenceId, userId)
+                    //fetchAndPlayTTS(sentenceId, userId)
                 }
                 // 앱 내 알림 업데이트
                 EventBus.getDefault().post(NotificationEvent(
@@ -120,93 +120,5 @@ class MyFirebaseMessagingService : FirebaseMessagingService() {
     }
 
 
-    private suspend fun fetchAndPlayTTS(sentenceId: Long, userId: Long) {//fcm으로 실시간으로 알람을 받아오고 문장을 다시 서버로 전송해서 tts로 반환받아온다.
-
-            try {
-
-                val accessToken = TokenManager(this).getAccessToken()
-                val response = apiService.getTTSByNotification(
-                    "Bearer $accessToken",
-                    sentenceId = sentenceId,
-                    userId = userId
-                )
-                Log.d("fetchAndPlayTTS 함수 실행중", "respionse값: $response")
-                if (response.isSuccessful) {
-                    response.body()?.use { body ->  // use()로 자원 자동 해제
-                        val tempFile = File.createTempFile("tts", ".mp3", cacheDir).apply {
-                            deleteOnExit()
-                            body.source().use { source ->  // Okio의 source() 사용
-                                outputStream().use { output ->
-                                    source.readAll(output.sink())  // Okio로 스트림 복사
-                                }
-                            }
-                        }
-                        Log.d("response 성공함 tts로 변경 성공", "tts tempfile: $tempFile")
-                        startAudioService(tempFile)
-                    }
-                }
-
-            } catch (e: Exception) {
-                Log.e("FCM", "TTS 요청 실패", e)
-            }
-
-    }
-
-    private fun startAudioService(file: File) {
-        Intent(applicationContext, AudioPlayerService::class.java).apply {
-            putExtra("AUDIO_PATH", file.absolutePath)
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                Log.d("startAudioService 성공", "tt")
-                startForegroundService(this)
-            } else {
-                startService(this)
-            }
-        }
-    }
-
-//    private fun playTTS(text: String) {
-//        CoroutineScope(Dispatchers.IO).launch {
-//            TTSHelper.synthesizeText(applicationContext, text)?.let { file ->
-//                Log.d("playtts","tts wokring")
-//                playAudioFile(applicationContext, file)
-//            }
-//        }
-//    }
-//
-//    private fun playAudioFile(appContext: Context, file: File) {
-//        try {
-//            Log.d("playaudiofile","play wokring")
-//            // 기존 재생 중인 음성 정리
-//            releaseMediaPlayer()
-//
-//            // 새 MediaPlayer 인스턴스 생성
-//            mediaPlayer = MediaPlayer().apply {
-//                setDataSource(appContext, Uri.fromFile(file))
-//                prepareAsync() // 비동기 준비
-//
-//                setOnPreparedListener { mp ->
-//                    mp.start() // 준비 완료 시 재생 시작
-//                }
-//
-//                setOnCompletionListener {
-//                    releaseMediaPlayer()
-//                    file.delete() // 재생 완료 후 임시 파일 삭제
-//                }
-//            }
-//        } catch (e: Exception) {
-//            e.printStackTrace()
-//            releaseMediaPlayer()
-//        }
-//    }
-//
-//    private fun releaseMediaPlayer() {
-//        mediaPlayer?.let {
-//            if (it.isPlaying) {
-//                it.stop()
-//            }
-//            it.release()
-//        }
-//        mediaPlayer = null
-//    }
 
 }

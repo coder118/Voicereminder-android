@@ -12,9 +12,30 @@ class CustomAlarmManager(private val context: Context) {
     private val alarmManager = context.getSystemService(ALARM_SERVICE) as AlarmManager
     private val activeAlarms = mutableSetOf<Int>() // 활성 알람 ID 저장
 
+
+    private fun isAlarmPending(notificationId: Int): Boolean {
+        val intent = Intent(context, AlarmReceiver::class.java)
+        return PendingIntent.getBroadcast(
+            context,
+            notificationId,
+            intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+        ) != null
+    }
+
     fun setAlarm(notificationId: Int,timeInMillis: Long, message: String) {
         Log.d("CustomAlarmManager", "Setting alarm at: $timeInMillis")
 //        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+//        if (isAlarmPending(notificationId)) {
+//            Log.d("Alarm", "알람 중복 방지: ID $notificationId")
+//            return
+//        }
+        // 시간 유효성 검사 추가
+//        if (timeInMillis <= System.currentTimeMillis()) {
+//            Log.e("Alarm", "과거 시간 알람 차단")
+//            return
+//        }
+
         val intent = Intent(context, AlarmReceiver::class.java).apply {
             putExtra("MESSAGE", message)
             putExtra("NOTIFICATION_ID", notificationId)

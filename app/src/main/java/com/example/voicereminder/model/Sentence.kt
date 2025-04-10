@@ -22,6 +22,7 @@ data class NotificationSettings(
     val repeat_mode: String,
     val notification_time: String?,
     val notification_date: String?,
+    val is_triggered : Boolean
     //val notification_count: Int = 1
 )
 
@@ -40,10 +41,15 @@ data class SentenceCreateRequest(
 )
 
 
+data class UpdateTriggerRequest(
+    val is_triggered: Boolean
+)
+
 //알람이 울릴때 적힌 문장, tts, 진동 여부, 알람시간의 값들을 한번에 받아오는 데이터 구조
 data class NotificationResponse(//문장 생성 API 호출 후 Django가 안드로이드로 보내는 응답 구조
     val id: Int,  // 알림 ID
     val sentence: Sentence,
     val notificationSettings: NotificationSettings,
-    val userSettings: UserSettings
+    val userSettings: UserSettings,
+    val is_triggered : Boolean
 )
