@@ -1,6 +1,7 @@
 package com.example.voicereminder.main
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -13,8 +14,10 @@ import com.example.voicereminder.main.SentenceViewModel
 import com.example.voicereminder.model.NotificationResponse
 import com.example.voicereminder.model.TTSVoiceResponse
 import kotlinx.coroutines.delay
+import org.threeten.bp.ZoneOffset
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -33,8 +36,11 @@ fun EditSentenceScreen(
     var selectedTime by remember { mutableStateOf(parseTime(originalItem.notificationSettings.notification_time)) }
     var selectedDate by remember { mutableStateOf(parseDate(originalItem.notificationSettings.notification_date)) }
     // isRandom을 Boolean으로 설정
-    var isRandom by remember { mutableStateOf(originalItem.notificationSettings.repeat_mode == "random") }
+    var isRandom by remember { mutableStateOf(originalItem.notificationSettings.repeat_mode == "daily") }
     var vibrationEnabled by remember { mutableStateOf(originalItem.userSettings.vibration_enabled) }
+
+    Log.d("DEBUG", "selectedDate date checking: $selectedDate")
+
 
 
     val sentenceState by sentenceViewModel.sentenceState.collectAsState()
@@ -45,20 +51,10 @@ fun EditSentenceScreen(
     )
 
 
-//    val todayMillis = LocalDate.now().atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli()
-    val todayMillis = ZonedDateTime.now(ZoneId.systemDefault())
-            .toLocalDate()
-            .atStartOfDay(ZoneId.systemDefault())
-            .toInstant()
-            .toEpochMilli()
+    val selectedDateMillis = selectedDate?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
+
     val datePickerState = rememberDatePickerState(
-        initialSelectedDateMillis = selectedDate?.let { date ->
-            // 날짜 비교 후 최종 값 결정 오늘이 27일인데 26일로 기존 알람이 설정이 되어있으면 자동으로 오늘 27일을 값으로 사용
-            maxOf(
-                date.atStartOfDay(ZoneId.systemDefault()).toInstant().toEpochMilli(),
-                todayMillis
-            )
-        } ?: todayMillis,  // null인 경우 오늘 날짜 사용
+        initialSelectedDateMillis =selectedDateMillis,  // null인 경우 오늘 날짜 사용
         selectableDates = object : SelectableDates {//오늘 이전의 데이터 값은 선택이 되지 않게 만드는 기능
             override fun isSelectableDate(utcTimeMillis: Long): Boolean {
                 val selectedDate = Instant.ofEpochMilli(utcTimeMillis)
@@ -75,11 +71,11 @@ fun EditSentenceScreen(
     }
 
     // datePickerState.selectedDateMillis가 null이 아닐 때 selectedDate 업데이트
-    LaunchedEffect(datePickerState.selectedDateMillis) {
-        datePickerState.selectedDateMillis?.let {
-            selectedDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
-        }
-    }
+//    LaunchedEffect(datePickerState.selectedDateMillis) {
+//        datePickerState.selectedDateMillis?.let {
+//            selectedDate = Instant.ofEpochMilli(it).atZone(ZoneId.systemDefault()).toLocalDate()
+//        }
+//    }
 
     LaunchedEffect(Unit) {//tts의 값을 로딩해서 가져온다.
         sentenceViewModel.loadTTSVoices()
@@ -130,7 +126,7 @@ fun EditSentenceScreen(
                         checked = isRandom,
                         onCheckedChange = { isRandom = it }
                     )
-                    Text("랜덤 알람 설정")
+                    Text("매일 알람 설정")
                 }
             }
             item {
@@ -264,18 +260,27 @@ fun parseTime(timeStr: String?): LocalTime? {
  * 문자열 형태의 날짜("yyyy-MM-dd" 등)을 LocalDate로 파싱
  * null 또는 파싱 불가능하면 null 반환
  */
+//@RequiresApi(Build.VERSION_CODES.O)
+//fun parseDate(dateStr: String?): LocalDate? {
+//    return try {
+////        if (!dateStr.isNullOrEmpty()) {
+////            LocalDate.parse(dateStr)
+////        } else null
+//        dateStr?.let {
+//            // 명시적으로 시간대 적용 (하루 시작 시간 00:00 기준)
+//            LocalDate.parse(it)
+//                .atStartOfDay(ZoneId.systemDefault()) // ← 핵심 추가 부분
+//                .toLocalDate()
+//        }
+//    } catch (e: Exception) {
+//        null
+//    }
+//}
+
 @RequiresApi(Build.VERSION_CODES.O)
 fun parseDate(dateStr: String?): LocalDate? {
     return try {
-//        if (!dateStr.isNullOrEmpty()) {
-//            LocalDate.parse(dateStr)
-//        } else null
-        dateStr?.let {
-            // 명시적으로 시간대 적용 (하루 시작 시간 00:00 기준)
-            LocalDate.parse(it)
-                .atStartOfDay(ZoneId.systemDefault()) // ← 핵심 추가 부분
-                .toLocalDate()
-        }
+        dateStr?.let { LocalDate.parse(it).plusDays(1) }//utc 시간으로 변경이 되기때문에 하루를 더한다.
     } catch (e: Exception) {
         null
     }

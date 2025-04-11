@@ -126,30 +126,6 @@ fun MainScreen(
             )
         },
 
-//        floatingActionButton = {
-//            Row {
-//                // 왼쪽에 TTS 버튼 추가
-//                FloatingActionButton(
-//                    onClick = onNavigateToTTS, // 👈 TTS 화면으로 이동
-//                    modifier = Modifier.padding(end = 16.dp)
-//                ) {
-//                    Icon(
-//                        painter = painterResource(id = android.R.drawable.ic_btn_speak_now),
-//                        contentDescription = "TTS 버튼"
-//                    )
-//                }
-//
-//                // 기존 글쓰기 버튼
-//                FloatingActionButton(
-//                    onClick = onNavigateToCreateSentence
-//                ) {
-//                    Icon(
-//                        painter = painterResource(id = android.R.drawable.ic_input_add),
-//                        contentDescription = "글쓰기 버튼"
-//                    )
-//                }
-//            }
-//        },
         // 오른쪽 하단에 글쓰기 버튼
         floatingActionButton = {
             FloatingActionButton(
@@ -198,6 +174,7 @@ fun MainScreen(
                                 )
                             }
                         )
+                        HorizontalDividerExample()
                     }
                 }
             } else {
@@ -279,12 +256,23 @@ fun NotificationItem(
             Text(text = "내용: ${item.sentence.content ?: "없음"}")
             Text(text = "날짜: ${item.notificationSettings.notification_date ?: "없음"} / 시간: ${item.notificationSettings.notification_time ?: "없음"}")
             Text(text = "진동: ${if (item.userSettings.vibration_enabled) "ON" else "OFF"}, TTS ID: ${item.sentence.tts_voice}")
-            Text(text = "랜덤알람: ${if (item.notificationSettings.repeat_mode == "random") "ON" else "OFF"}")
+            Text(text = "매일알람: ${if (item.notificationSettings.repeat_mode == "random") "ON" else "OFF"}")
 
         }
         // 오른쪽에 삭제 버튼
         Button(onClick = { onDeleteClick(item) }) {
             Text("삭제")
         }
+    }
+}
+
+@Composable
+fun HorizontalDividerExample() {
+    Column(
+        verticalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+
+        HorizontalDivider(thickness = 2.dp)
+
     }
 }
